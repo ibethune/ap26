@@ -1,0 +1,3 @@
+gcc -m64 -O3 AP26.c -o ap26.exe
+
+for BOINC support, -DBOINC
