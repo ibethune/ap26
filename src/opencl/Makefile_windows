@@ -1,0 +1,33 @@
+CC = gcc
+LD = $(CC)
+
+APP = ap26opencl_windows
+BOINC_APP = ap26opencl_windows_boinc
+
+SRC = AP26.c simpleCL.c simpleCL.h CONST.H checkn.h clearok.h clearsol.h offset.h setupokok.h sieve.h sieve_nv.h
+
+OCL_INC = 
+OCL_LIB = C:/Windows/SysWOW64/OpenCL.dll
+
+BOINC_DIR = ../../../boinc_64
+BOINC_INC = -I$(BOINC_DIR)/include/boinc
+BOINC_LIB = -L$(BOINC_DIR)/lib -lboinc_api -lboinc -lstdc++
+
+CFLAGS = -O3 -m32 
+LDFLAGS = $(CFLAGS) -Wl,-enable-stdcall-fixup
+
+all : $(APP) $(BOINC_APP)
+
+$(APP) : $(SRC)
+	$(CC) $(CFLAGS) $(OCL_INC) -c -o AP26.o AP26.c
+	$(CC) $(CFLAGS) $(OCL_INC) -c -o simpleCL.o simpleCL.c
+	$(LD) $(LDFLAGS) $(OCL_LIB) -o $(APP) AP26.o simpleCL.o
+
+$(BOINC_APP) : $(SRC)
+	$(CC) $(CFLAGS) $(OCL_INC) -DBOINC $(BOINC_INC) -c -o AP26_boinc.o AP26.c
+	$(CC) $(CFLAGS) $(OCL_INC) -DBOINC $(BOINC_INC) -c -o simpleCL_boinc.o simpleCL.c
+	$(LD) $(LDFLAGS) $(OCL_LIB) $(BOINC_LIB) -o $(BOINC_APP) AP26_boinc.o simpleCL_boinc.o
+
+clean :
+	rm -f *.o $(APP) $(BOINC_APP)
+
