@@ -203,7 +203,7 @@ static FILE *my_fopen(const char *filename, const char *mode)
 
 
 // a bit less than 32bit signed int max
-#define MAXINTV 2000000000;
+#define MAXINTV 2000000000
 
 // Bryan Little 6-9-2016
 // BOINC result hash calculation, write to solution file, and close.
@@ -946,6 +946,7 @@ int main(int argc, char *argv[])
 			printf("local workgroup size for sieve kernel is 64 threads\n");
 		}
 	}
+
 	else{
 		localsize = 64;
 		printf("local workgroup size for sieve kernel is 64 threads\n");

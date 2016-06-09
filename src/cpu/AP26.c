@@ -168,7 +168,7 @@ static FILE *my_fopen(const char *filename, const char *mode)
 
 
 // a bit less than 32bit signed int max
-#define MAXINTV 2000000000;
+#define MAXINTV 2000000000
 
 // Bryan Little 6-9-2016
 // BOINC result hash calculation, write to solution file, and close.
