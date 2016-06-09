@@ -231,10 +231,11 @@ __m128i r_numvec2 = _mm_set_epi16(REM(n59,101,7), REM(n59,103,7), REM(n59,107,7)
 							ReportSolution(k,K,first_term);
 							/* 	hash for BOINC quorum
 								we create a hash based on each AP10+ result mod 1000
-								prevent overflow of int max 2147483647	*/
+								and that result's AP length  	*/
 							result_hash += first_term % 1000;
-							if(result_hash > 2000000000){
-								result_hash = 0;
+							result_hash += k;
+							if(result_hash > MAXINTV){
+								result_hash -= MAXINTV;
 							}
 
 

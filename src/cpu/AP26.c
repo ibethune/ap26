@@ -73,6 +73,11 @@
    All search results and a result hash will be appended to SOL-AP26.txt.
 */
 
+// AP26 application version
+#define MAJORV 1
+#define MINORV 0
+
+
 #define __STDC_FORMAT_MACROS
 
 #include <stdio.h>
@@ -86,7 +91,7 @@
 #include <emmintrin.h>
 
 // 64bit only
-# define __x86_64__ 1
+#define __x86_64__
 
 
 #ifdef BOINC
@@ -110,9 +115,6 @@
 
 /* File names.
  */
-#ifndef INI_FILENAME
-# define INI_FILENAME "AP26-ini.txt"
-#endif
 #ifndef STATE_FILENAME
 # define STATE_FILENAME "AP26-state.txt"
 #endif
@@ -165,27 +167,42 @@ static FILE *my_fopen(const char *filename, const char *mode)
 }
 
 
-// done, print BOINC result hash and close file
+// a bit less than 32bit signed int max
+#define MAXINTV 2000000000;
+
+// Bryan Little 6-9-2016
+// BOINC result hash calculation, write to solution file, and close.
+// The hash function is a 16 char hexadecimal string used to compare results found by different computers in a BOINC quorum.
+// The hash can be used to compare results between GPU and CPU clients.
+// It also prevents the server from having to validate every AP10+ reported by clients, which can be in different orders depending on GPU.
+// It contains information about the assigned workunit and all APs found of length 10 or larger.
 static void write_hash()
 {
 
 	int tmp;
 	int i = 0;
 
-	// init hash to F000000000000000
+	// init hash to 0000000000000000
 	char hexhash[16] = 	{48, 48, 48, 48,
 				 48, 48, 48, 48,
 				 48, 48, 48, 48,
-				 48, 48, 48, 70};
+				 48, 48, 48, 48};
 
-	unsigned int minmax = KMIN + KMAX;
+	// calculate the top 32bits of the hash based on assigned workunit range
+	uint64_t minmax = KMIN + KMAX;
+	// check to make sure we don't overflow a 32bit signed int with large K values
+	while(minmax > MAXINTV){
+		minmax -= MAXINTV;
+	}
 
 	unsigned int solhash = result_hash;
 
-	int64_t hash = (int64_t)( (((uint64_t)minmax) << 32) | solhash);
+	// top 32 bits are workunit range... bottom 32 bits are solutions found
+	int64_t hash = (int64_t)( (minmax << 32) | solhash);
 
-//	printf("minmax: %u solhash: %u\ndechash: %"PRId64"\n", minmax, solhash, hash);
+//	printf("minmax: %llu solhash: %u\ndechash: %lld\n", minmax, solhash, hash);
 
+	// convert to hex
 	while(hash!=0){
 		tmp = hash % 16;
 
@@ -268,8 +285,39 @@ static int read_state(int KMIN, int KMAX, int SHIFT, int *K)
 
 
 
+/* Bryan Little - added to CPU code 6-9-2016
+   Returns index j where:
+   0<=j<k ==> f+j*d*23# is composite.
+   j=k    ==> for all 0<=j<k, f+j*d*23# is a strong probable prime to base 2 only.
+*/
+static int val_base2_ap26(int k, int d, int64_t f)
+{
+	int64_t N;
+	int j;
 
-/* Returns index j where:
+	if (f%2==0)
+		return 0;
+
+	for (j = 0, N = f; j < k; j++){
+
+		if (N < 0 || N >= (INT64_C(1) << LDBL_MULMOD_LIMIT)){
+			fprintf(stderr,__FILE__": modulus out of range.\n");
+			exit(EXIT_FAILURE);
+		}
+
+		if (!strong_prp(2,N))
+			return j;
+
+		N += (int64_t)d*2*3*5*7*11*13*17*19*23;
+	}
+
+	return j;
+}
+
+
+/*
+   Bryan Little - added to CPU code 6-9-2016
+   Returns index j where:
    0<=j<k ==> f+j*d*23# is composite.
    j=k    ==> for all 0<=j<k, f+j*d*23# is a strong probable prime to 9 bases.
 */
@@ -277,22 +325,16 @@ static int validate_ap26(int k, int d, int64_t f)
 {
   int64_t N;
   int j;
-#ifdef GMP
-  mpz_t mpN;
-#else
+
   const int base[] = {2,3,5,7,11,13,17,19,23};
-#endif
 
   if (f%2==0)
     return 0;
 
-#ifdef GMP
-  mpz_init2(mpN,64);
-#endif
 
   for (j = 0, N = f; j < k; j++)
   {
-#if ((defined(__i386__) || defined(__x86_64__)) && !defined(GMP))
+
     int i;
 
     if (N < 0 || N >= (INT64_C(1) << LDBL_MULMOD_LIMIT))
@@ -305,99 +347,67 @@ static int validate_ap26(int k, int d, int64_t f)
       if (!strong_prp(base[i],N))
         return j;
 
-#elif ((defined(__ppc64__) || defined(__powerpc64__)) && !defined(GMP))
-    int i;
-
-    if (N < 0)
-    {
-      fprintf(stderr,__FILE__": modulus out of range.\n");
-      exit(EXIT_FAILURE);
-    }
-
-    for (i = 0; i < sizeof(base)/sizeof(int); i++)
-      if (!strong_prp(base[i],N))
-        return j;
-
-#else
-    if (N < 0)
-    {
-      fprintf(stderr,__FILE__": modulus out of range.\n");
-      exit(EXIT_FAILURE);
-    }
-
-    if (sizeof(unsigned long) >= 8)
-      mpz_set_ui(mpN,N);
-    else
-    {
-      mpz_set_ui(mpN,N>>32);
-      mpz_mul_2exp(mpN,mpN,32);
-      mpz_add_ui(mpN,mpN,N&0xffffffffUL);
-    }
-
-    if (mpz_millerrabin(mpN,9) == 0)
-      break;
-#endif
-
     N += (int64_t)d*2*3*5*7*11*13*17*19*23;
   }
-
-#ifdef GMP
-  mpz_clear(mpN);
-#endif
 
   return j;
 }
 
-// define what action to take when a solution is found
+
+// Bryan Little - added to CPU code 6-9-2016
+// Changed function to check ALL solutions for validity, not just solutions >= MINIMUM_AP_LENGTH_TO_REPORT
+// GPU does a prp base 2 check only. It will sometimes report an AP with a base 2 probable prime.
 void ReportSolution(int AP_Length,int difference,int64_t First_Term)
 {
-  if (AP_Length >= MINIMUM_AP_LENGTH_TO_REPORT)
-  {
-    int i;
 
+	int i;
 
-    if ((i = validate_ap26(AP_Length,difference,First_Term)) < AP_Length)
-    {
+	i = validate_ap26(AP_Length,difference,First_Term);
+
+	if (i < AP_Length){
 #ifdef BOINC
-      if (boinc_is_standalone())
+		if (boinc_is_standalone())
 #endif
-        printf("Non-Solution: %d %d %"PRId64"\n",
-               AP_Length,difference,First_Term);  
+		printf("Non-Solution: %d %d %lld\n",AP_Length,difference,First_Term);
 
-      /* Check leading terms */
-      ReportSolution(i,difference,First_Term);
+		if (val_base2_ap26(AP_Length,difference,First_Term) < AP_Length){
+			// CPU really did calculate something wrong.  It's not a prp base 2 AP
+			printf("Error: Computation error, CPU computed invalid AP, exiting...\n");
+			fprintf(stderr,"Error: Computation error, CPU computed invalid AP\n");
+			exit(EXIT_FAILURE);
+		} 
 
-      /* Check trailing terms */
-      ReportSolution(AP_Length-(i+1),difference,First_Term
-                     +(int64_t)(i+1)*difference*2*3*5*7*11*13*17*19*23);
-      return;
-    }
+		// Even though this AP is not valid, it may contain an AP that is.
+		/* Check leading terms */
+		ReportSolution(i,difference,First_Term);
 
-    if (results_file == NULL)
-      results_file = my_fopen(RESULTS_FILENAME,"a");
+		/* Check trailing terms */
+		ReportSolution(AP_Length-(i+1),difference,First_Term+(int64_t)(i+1)*difference*2*3*5*7*11*13*17*19*23);
+		return;
+	}
+	else if (AP_Length >= MINIMUM_AP_LENGTH_TO_REPORT){
+
+		if (results_file == NULL)
+			results_file = my_fopen(RESULTS_FILENAME,"a");
 
 #ifdef BOINC
-      if (boinc_is_standalone())
+		if (boinc_is_standalone())
 #endif
-        printf("Solution: %d %d %"PRId64"\n",
-               AP_Length,difference,First_Term);
+		printf("Solution: %d %d %lld\n",AP_Length,difference,First_Term);
 
-    if (results_file == NULL)
-    {
-      fprintf(stderr,"Cannot open %s !!!\n",RESULTS_FILENAME);
-      exit(EXIT_FAILURE);
-    }
+		if (results_file == NULL){
+			fprintf(stderr,"Cannot open %s !!!\n",RESULTS_FILENAME);
+			exit(EXIT_FAILURE);
+		}
 
-    if (fprintf(results_file,"%d %d %"PRId64"\n",
-                AP_Length,difference,First_Term)<0)
-    {
-      fprintf(stderr,"Cannot write to %s !!!\n",RESULTS_FILENAME);
-      exit(EXIT_FAILURE);
-    }
-
-
-  }
+		if (fprintf(results_file,"%d %d %lld\n",AP_Length,difference,First_Term)<0){
+			fprintf(stderr,"Cannot write to %s !!!\n",RESULTS_FILENAME);
+			exit(EXIT_FAILURE);
+		}
+	}
+	
 }
+
 
 
 /* Checkpoint 
@@ -405,39 +415,35 @@ void ReportSolution(int AP_Length,int difference,int64_t First_Term)
 */
 void checkpoint(int SHIFT, int K, int force)
 {
-  double d;
+	double d;
 
-  if (K_COUNT > 0)
-    d = (double)K_DONE/K_COUNT;
-  else
-    d = 1.0;
+	if (K_COUNT > 0)
+		d = (double)K_DONE/K_COUNT;
+	else
+		d = 1.0;
 
 #ifdef BOINC
-  if (force)
-    boinc_begin_critical_section();
-  if (force || boinc_time_to_checkpoint())
-  {
+	if (force)
+		boinc_begin_critical_section();
+	if (force || boinc_time_to_checkpoint()){
 #endif
 
-    if (results_file != NULL)
-      fflush(results_file);
+		if (results_file != NULL)
+			fflush(results_file);
 
-    write_state(KMIN,KMAX,SHIFT,K);
+		write_state(KMIN,KMAX,SHIFT,K);
 
-    /* It is OK to print this progress message now since other buffers are
-       being flushed now anyway */
-    printf("Checkpoint: KMIN=%d KMAX=%d SHIFT=%d K=%d (%.2f%%)\n",KMIN,KMAX,SHIFT,K,d*100.0);
-
-#ifdef BOINC
-    if (!force)
-      boinc_checkpoint_completed();
-  }
-  if (force)
-    boinc_end_critical_section();
-#endif
+		/* It is OK to print this progress message now since other buffers are being flushed now anyway */
+		printf("Checkpoint: KMIN=%d KMAX=%d SHIFT=%d K=%d (%.2f%%)\n",KMIN,KMAX,SHIFT,K,d*100.0);
 
 #ifdef BOINC
-  boinc_fraction_done(d);
+		if (!force)
+			boinc_checkpoint_completed();
+	}
+	if (force)
+		boinc_end_critical_section();
+
+	boinc_fraction_done(d);
 #endif
 }
 
@@ -449,68 +455,63 @@ void checkpoint(int SHIFT, int K, int force)
  */
 static int will_search(int K)
 {
-  return (K%PRIME1 && K%PRIME2 && K%PRIME3 && K%PRIME4 &&
-          K%PRIME5 && K%PRIME6 && K%PRIME7 && K%PRIME8);
+  	return (K%PRIME1 && K%PRIME2 && K%PRIME3 && K%PRIME4 &&
+          	K%PRIME5 && K%PRIME6 && K%PRIME7 && K%PRIME8);
 }
 
 
 int main(int argc, char *argv[])
 {
-  int i, K, SHIFT;
+	int i, K, SHIFT;
 
-#ifdef __GNUC__
-  printf("Compiled " __DATE__ " with GCC " __VERSION__ "\n");
-#endif
+	printf("AP26 10-shift search version %d.%d by Bryan Little\n",MAJORV,MINORV);
+	printf("Compiled " __DATE__ " with GCC " __VERSION__ "\n");
 
 
 #ifdef BOINC
-  boinc_init();
+	boinc_init();
+	fprintf(stderr, "AP26 10-shift search version %d.%d by Bryan Little\n",MAJORV,MINORV);
+	fprintf(stderr, "Compiled " __DATE__ " with GCC " __VERSION__ "\n");
 #endif
 
-#if ((defined(__i386__) || defined(__x86_64__)) && !defined(GMP))
-  /* Check FPU mode and change it to extended precision if necessary. */
-  check_fpu_mode();
-#endif
-
-  /* Get search parameters from command line */
-  if (argc == 4)
-  {
-    sscanf(argv[1],"%d",&KMIN);
-    sscanf(argv[2],"%d",&KMAX);
-    sscanf(argv[3],"%d",&SHIFT);
-  }
-  else
-  {
-    fprintf(stderr,"Usage: %s [KMIN KMAX SHIFT]\n",argv[0]);
-    exit(EXIT_FAILURE);
-  }
+	check_fpu_mode();
 
 
-  /* Resume from checkpoint if there is one */
-  if (read_state(KMIN,KMAX,SHIFT,&K))
-  {
-    printf("Resuming search from the checkpoint in %s.\n",STATE_FILENAME);
-  }
-  else
-  {
-	printf("Beginning a new search with parameters from the command line\n");
-	K = KMIN;
-	// zero result hash for BOINC
-	result_hash = 0;
-  }
+	/* Get search parameters from command line */
+	if (argc == 4){
+		sscanf(argv[1],"%d",&KMIN);
+		sscanf(argv[2],"%d",&KMAX);
+		sscanf(argv[3],"%d",&SHIFT);
+	}
+	else{
+		fprintf(stderr,"Usage: %s [KMIN KMAX SHIFT]\n",argv[0]);
+		exit(EXIT_FAILURE);
+	}
 
-  /* Count the number of K in the range KMIN <= K <= KMAX that will actually
-     be searched and (if K > KMIN) those that have already been searched. */
-  for (i = KMIN; i <= KMAX; i++)
-    if (will_search(i))
-    {
-      K_COUNT++;
-      if (K > i)
-        K_DONE++;
-    }
 
-  printf("%d K in this range remaining to be searched (%d skipped, %d done)."
-         "\n",K_COUNT-K_DONE,KMAX+1-KMIN-K_COUNT,K_DONE);
+	/* Resume from checkpoint if there is one */
+	if (read_state(KMIN,KMAX,SHIFT,&K)){
+		printf("Resuming search from the checkpoint in %s.\n",STATE_FILENAME);
+	}
+	else{
+		printf("Beginning a new search with parameters from the command line\n");
+		K = KMIN;
+		// zero result hash for BOINC
+		result_hash = 0;
+	}
+
+	/* Count the number of K in the range KMIN <= K <= KMAX that will actually
+		be searched and (if K > KMIN) those that have already been searched. */
+	for (i = KMIN; i <= KMAX; i++){
+		if (will_search(i)){
+			K_COUNT++;
+			if (K > i)
+				K_DONE++;
+		}
+	}
+
+	printf("%d K in this range remaining to be searched (%d skipped, %d done)."
+	       "\n",K_COUNT-K_DONE,KMAX+1-KMIN-K_COUNT,K_DONE);
 
 
 
@@ -543,9 +544,9 @@ int main(int argc, char *argv[])
 
 
 
-  /* Done */
+	/* Done */
 #ifdef BOINC
-  boinc_finish(0);
+	boinc_finish(0);
 #endif
 
 

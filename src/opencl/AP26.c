@@ -1,4 +1,12 @@
-/* AP26-boinc.c -- Geoffrey Reynolds, 11 September 2008.
+/* 
+	***************
+	Bryan Little 6-9-2016
+	BOINC enabled OpenCL Nvidia/AMD GPU AP26 app port
+	This is a 10 shift search.  Checks each K with SHIFT and SHIFT+64, SHIFT+128, ..., SHIFT+576
+	***************
+
+
+   AP26-boinc.c -- Geoffrey Reynolds, 11 September 2008.
 
    This file is a replacement for AP26-64.c in Jaroslaw Wroblewski's AP26
    sample implementation.
@@ -16,50 +24,18 @@
    about how the algorithm works and for the copyleft notice.
 
 
-   Compiling the source:
-   ---------------------
-
-   Unpack this archive (AP26-boinc-src.zip) along with the sample
-   implementation source (AP26.zip) and patches (faster32.zip, if32.zip)
-   from the same directory.
- 
-   To compile a standalone app for manual testing:
-
-    gcc -O3 -o AP26 AP26-boinc.c
-
-   To compile a BOINC app:
-
-    gcc -O3 -DBOINC -o AP26 AP26-boinc.c -lstdc++ -lpthread -lboinc_api -lboinc
-
-   For non-x86/x86_64/ppc64 architectures, add -lgmp to the gcc command line.
-
-
-   Testing the executable:
-   -----------------------
-
-   To briefly test the AP26 executable, check that the file TEST-366384.txt
-   matches the results file SOL-AP26.txt produced by executing:
-
-     ./AP26 366384 366384 0
-
-
    Program operation:
    ------------------
 
-   If search parameters are not given on the command line as
+   search parameters are given on the command line as
 
-     AP26 [KMIN KMAX SHIFT [LINEAR]]
+     [KMIN KMAX SHIFT --device N] where N is the GPU to use
 
-   then they must be present in a file AP26-ini.txt, separated by whitespace.
 
-   If LINEAR is nonzero then KMIN, KMAX will first be set to f(KMIN), f(KMAX)
-   respectively, where f(n) is the n'th positive integer not divisible by
-   one of {29,31,37,41,43,47,53,59}.
-
-   The search will begin at K=KMIN ITER=0 unless a file AP26-state.txt
+   The search will begin at K=KMIN unless a file AP26-state.txt
    exists containing a checkpoint of the form
 
-     KMIN KMAX SHIFT K ITER FREQ
+     KMIN KMAX SHIFT K HASH
 
    with KMIN KMAX SHIFT matching the initial search parameters, in which
    case the search will resume from that checkpoint.
@@ -67,17 +43,18 @@
    The search will continue up to and including K=KMAX. On completion
    AP26-state.txt will contain a checkpoint of the form
 
-     KMIN KMAX SHIFT KMAX+1 0 FREQ
+     KMIN KMAX SHIFT KMAX+1 HASH
 
-   No modification will be made to AP26-ini.txt.
    Periodic checkpoints will be written to AP26-state.txt.
    All search results will be appended to SOL-AP26.txt.
 
-	***************
-	Bryan Little Nov 2013
-	This is a 10 shift search.  Checks each K with SHIFT and SHIFT+64, SHIFT+128, ..., SHIFT+576
 
 */
+
+
+// AP26 application version
+#define MAJORV 1
+#define MINORV 0
 
 
 #include <stdio.h>
@@ -199,7 +176,9 @@ cl_mem sclMalloc( sclHard hardware, cl_int mode, size_t size ){
 	if ( err != CL_SUCCESS ) {
 		printf( "\nclMalloc Error\n" );
 		sclPrintErrorFlags( err );
+
 #ifdef BOINC
+		fprintf(stderr,"OpenCL memory allocation error, restarting in 1 minute.\n");
 		boinc_temporary_exit(60);
 #endif
 	}
@@ -223,27 +202,42 @@ static FILE *my_fopen(const char *filename, const char *mode)
 
 
 
-// done, print BOINC result hash and close file
+// a bit less than 32bit signed int max
+#define MAXINTV 2000000000;
+
+// Bryan Little 6-9-2016
+// BOINC result hash calculation, write to solution file, and close.
+// The hash function is a 16 char hexadecimal string used to compare results found by different computers in a BOINC quorum.
+// The hash can be used to compare results between GPU and CPU clients.
+// It also prevents the server from having to validate every AP10+ reported by clients, which can be in different orders depending on GPU.
+// It contains information about the assigned workunit and all APs found of length 10 or larger.
 static void write_hash()
 {
 
 	int tmp;
 	int i = 0;
 
-	// init hash to F000000000000000
+	// init hash to 0000000000000000
 	char hexhash[16] = 	{48, 48, 48, 48,
 				 48, 48, 48, 48,
 				 48, 48, 48, 48,
-				 48, 48, 48, 70};
+				 48, 48, 48, 48};
 
-	unsigned int minmax = KMIN + KMAX;
+	// calculate the top 32bits of the hash based on assigned workunit range
+	uint64_t minmax = KMIN + KMAX;
+	// check to make sure we don't overflow a 32bit signed int with large K values
+	while(minmax > MAXINTV){
+		minmax -= MAXINTV;
+	}
 
 	unsigned int solhash = result_hash;
 
-	int64_t hash = (int64_t)( (((uint64_t)minmax) << 32) | solhash);
+	// top 32 bits are workunit range... bottom 32 bits are solutions found
+	int64_t hash = (int64_t)( (minmax << 32) | solhash);
 
-//	printf("minmax: %u solhash: %u\ndechash: %lld\n", minmax, solhash, hash);
+//	printf("minmax: %llu solhash: %u\ndechash: %lld\n", minmax, solhash, hash);
 
+	// convert to hex
 	while(hash!=0){
 		tmp = hash % 16;
 
@@ -759,10 +753,11 @@ void SearchAP26(int K, int SHIFT, int sieve_ls)
 
 			/* 	hash for BOINC quorum
 				we create a hash based on each AP10+ result mod 1000
-				prevent overflow of int max 2147483647	*/
+				and that result's AP length  	*/
 			result_hash += sol_val_h[e] % 1000;
-			if(result_hash > 2000000000){
-				result_hash = 0;
+			result_hash += sol_k_h[e];
+			if(result_hash > MAXINTV){
+				result_hash -= MAXINTV;
 			}
 	
 			e++;
@@ -793,13 +788,13 @@ int main(int argc, char *argv[])
 	int GPUNUM, GPU, localsize;
 	cl_int err;
 
-	printf("AP26 10-shift search OpenCL application port by Bryan Little\n");
+	printf("AP26 OpenCL 10-shift search version %d.%d by Bryan Little\n",MAJORV,MINORV);
 	printf("Compiled " __DATE__ " with GCC " __VERSION__ "\n");
 
 
 #ifdef BOINC
 	boinc_init();
-	fprintf(stderr, "AP26 10-shift search OpenCL application port by Bryan Little\n");
+	fprintf(stderr, "AP26 OpenCL 10-shift search version %d.%d by Bryan Little\n",MAJORV,MINORV);
 	fprintf(stderr, "Compiled " __DATE__ " with GCC " __VERSION__ "\n");
 #endif
 
@@ -939,7 +934,8 @@ int main(int argc, char *argv[])
 	unsigned int maxlocal = (unsigned int)local;
 
 	if(GPU==NVIDIA){
-		if(maxlocal == 1024){
+		// today's gpu's use 1024 max, future may use more?
+		if(maxlocal >= 1024){
 			localsize = 1024;
 			printf("local workgroup size for sieve kernel is 1024 threads\n");
 		}
