@@ -1,0 +1,22 @@
+
+NVIDIA
+export LD_LIBRARY_PATH=/usr/local/cuda-6.0/lib64:$LD_LIBRARY_PATH
+
+gcc -O3 AP26.c simpleCL.c -o ap26opencl -I /usr/local/cuda-6.0/include -lOpenCL
+
+
+
+AMD
+old
+
+
+current
+gcc -m64 -O3 AP26.c simpleCL.c -o ap26opencl -I /opt/AMDAPPSDK-3.0/include/CL -L /opt/AMDAPPSDK-3.0/lib/x86_64/sdk -lOpenCL
+boinc
+g++ -m64 -O3 -DBOINC AP26.c simpleCL.c -o ap26opencl -I /opt/AMDAPPSDK-3.0/include/CL -L /opt/AMDAPPSDK-3.0/lib/x86_64/sdk -I /home/bryan/boinc -I /home/bryan/boinc/lib -L /home/bryan/boinc/lib -I /home/bryan/boinc/api -L /home/bryan/boinc/api -lboinc_api -lboinc_opencl -lOpenCL
+
+
+
+
+mingw
+gcc -m64 -O3 AP26.c simpleCL.c -o ap26opencl.exe -LC:\opencl\AP26OpenCL\ -lOpenCL

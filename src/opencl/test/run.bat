@@ -1,0 +1,1 @@
+ap26opencl.exe 366384 366384 0 --device 0
