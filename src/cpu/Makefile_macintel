@@ -4,7 +4,7 @@ LD = $(CC)
 APP = ap26_macintel64
 BOINC_APP = ap26_macintel64_boinc
 
-BOINC_DIR = ../../boinc_707
+BOINC_DIR = ../../../boinc_707
 BOINC_INC = -I$(BOINC_DIR)/api -I$(BOINC_DIR)/lib
 BOINC_LIB = -L$(BOINC_DIR)/mac_build/build/Deployment/ -lboinc -lboinc_api -lstdc++
 

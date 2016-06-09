@@ -4,7 +4,7 @@ LD = $(CC)
 APP = ap26_linux
 BOINC_APP = ap26_linux_boinc
 
-BOINC_DIR = ../../boinc_64_707
+BOINC_DIR = ../../../boinc_64_707
 BOINC_INC = -I$(BOINC_DIR)/include/boinc
 BOINC_LIB = -L$(BOINC_DIR)/lib -lboinc_api -lboinc -lstdc++ -lpthread -lm
 

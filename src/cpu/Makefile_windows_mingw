@@ -4,7 +4,7 @@ LD = $(CC)
 APP = ap26_windows.exe
 BOINC_APP = ap26_windows_boinc.exe
 
-BOINC_DIR = ../../boinc_64
+BOINC_DIR = ../../../boinc_64
 BOINC_INC = -I$(BOINC_DIR)/include/boinc
 BOINC_LIB = -L$(BOINC_DIR)/lib -lboinc_api -lboinc -lstdc++
 
