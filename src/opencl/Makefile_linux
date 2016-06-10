@@ -1,0 +1,33 @@
+CC = gcc
+LD = $(CC)
+
+APP = ap26opencl_linux64
+BOINC_APP = ap26opencl_linux64_boinc
+
+SRC = AP26.c simpleCL.c simpleCL.h CONST.H checkn.h clearok.h clearsol.h offset.h setupokok.h sieve.h sieve_nv.h
+
+OCL_INC = -I /usr/local/cuda/include/CL/
+OCL_LIB = -L/usr/lib/x86_64-linux-gnu/ -lOpenCL
+
+BOINC_DIR = ../../../boinc_64_707
+BOINC_INC = -I$(BOINC_DIR)/include/boinc
+BOINC_LIB = -L$(BOINC_DIR)/lib -lboinc_api -lboinc -lstdc++ -lpthred -lm
+
+CFLAGS =-O3 -m64
+LDFLAGS = $(CFLAGS)
+
+all : $(APP) $(BOINC_APP)
+
+$(APP) : $(SRC)
+	$(CC) $(CFLAGS) $(OCL_INC) -c -o AP26.o AP26.c
+	$(CC) $(CFLAGS) $(OCL_INC) -c -o simpleCL.o simpleCL.c
+	$(LD) $(LDFLAGS) AP26.o simpleCL.o $(OCL_LIB) -o $(APP) 
+
+$(BOINC_APP) : $(SRC)
+	$(CC) $(CFLAGS) $(OCL_INC) -DBOINC $(BOINC_INC) -c -o AP26_boinc.o AP26.c
+	$(CC) $(CFLAGS) $(OCL_INC) -DBOINC $(BOINC_INC) -c -o simpleCL_boinc.o simpleCL.c
+	$(LD) $(LDFLAGS) AP26_boinc.o simpleCL_boinc.o $(OCL_LIB) $(BOINC_LIB) -o $(BOINC_APP)
+
+clean :
+	rm -f *.o $(APP) $(BOINC_APP)
+
