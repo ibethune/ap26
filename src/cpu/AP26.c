@@ -90,9 +90,6 @@
 // SSE2
 #include <emmintrin.h>
 
-// 64bit only
-#define __x86_64__
-
 
 #ifdef BOINC
 # include "boinc_api.h"
