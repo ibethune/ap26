@@ -1,4 +1,4 @@
-CC = gcc
+CC = clang++
 LD = $(CC)
 
 APP = ap26opencl_macintel64
@@ -8,9 +8,9 @@ SRC = AP26.c simpleCL.c simpleCL.h CONST.H checkn.h clearok.h clearsol.h offset.
 
 BOINC_DIR = ../../../boinc_707
 BOINC_INC = -I$(BOINC_DIR)/api -I$(BOINC_DIR)/lib
-BOINC_LIB = -L$(BOINC_DIR)/mac_build/build/Deployment/ -lboinc -lboinc_api -lstdc++
+BOINC_LIB = -L$(BOINC_DIR)/mac_build/build/Deployment/ -lboinc -lboinc_api -lboinc_opencl -lstdc++
 
-CFLAGS =-O3 -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.8.sdk -mmacosx-version-min=10.8
+CFLAGS = -O3 -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.8.sdk -mmacosx-version-min=10.6
 LDFLAGS = $(CFLAGS)
 
 all : $(APP) $(BOINC_APP)

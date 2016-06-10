@@ -65,12 +65,6 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-#ifdef BOINC
-# include "boinc_api.h"
-# include "boinc_opencl.h"
-# include "filesys.h"
-#endif
-
 #include "CONST.H"
 #include <time.h>
 #include "simpleCL.h"
@@ -85,8 +79,11 @@
 #include "sieve.h"
 #include "sieve_nv.h"
 
-
-
+#ifdef BOINC
+# include "boinc_api.h"
+# include "boinc_opencl.h"
+# include "filesys.h"
+#endif
 
 #define numn59s 137375320
 #define halfn59s 68687660
@@ -320,7 +317,7 @@ static int read_state(int KMIN, int KMAX, int SHIFT, int *K)
 
 
 /* Bryan Little 9-28-2015
-/* Returns index j where:
+   Returns index j where:
    0<=j<k ==> f+j*d*23# is composite.
    j=k    ==> for all 0<=j<k, f+j*d*23# is a strong probable prime to base 2 only.
 */
@@ -852,7 +849,11 @@ int main(int argc, char *argv[])
 		cl_platform_id platform = NULL;
 		cl_device_id device;
 
+#if BOINC_MAJOR_VERSION < 7 || (BOINC_MAJOR_VERSION == 7 && BOINC_MINOR_VERSION == 0)
+                retval = boinc_get_opencl_ids(&device, &platform);
+#else
 		retval = boinc_get_opencl_ids(argc, argv, 0, &device, &platform);
+#endif
 		if (retval) {
 			fprintf(stderr, "Error: boinc_get_opencl_ids() failed with error %d\n",retval);
 			exit(EXIT_FAILURE);
