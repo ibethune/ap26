@@ -1,28 +1,27 @@
 CC = gcc
 LD = $(CC)
 
-APP = ap26_linux
-BOINC_APP = ap26_linux_boinc
+APP = ap26_sse2_linux64
 
-SRC = AP26.c AP26.h MAKES.H CONST.H PrimeQ_x86.h
+SRC = ../common/AP26.c AP26.h MAKES.H CONST.H PrimeQ_x86.h
+OBJ = AP26.o
 
 BOINC_DIR = ../../../boinc_64_707
 BOINC_INC = -I$(BOINC_DIR)/include/boinc
 BOINC_LIB = -L$(BOINC_DIR)/lib -lboinc_api -lboinc -lstdc++ -lpthread -lm
 
-CFLAGS =-O3 -m64
+DFLAGS  = -DAP26_BOINC -DAP26_SSE2
+CFLAGS  = -I . -O3 -m64
 LDFLAGS = $(CFLAGS) -static
 
-all : $(APP) $(BOINC_APP)
+all : $(APP)
 
-$(APP) : $(SRC) 
-	$(CC) $(CFLAGS) -c -o AP26.o AP26.c
-	$(LD) $(LDFLAGS) -o $(APP) AP26.o
+$(APP) : $(OBJ) 
+	$(LD) $(LDFLAGS) $^ $(BOINC_LIB) -o $@
 
-$(BOINC_APP) : $(SRC) 
-	$(CC) $(CFLAGS) -DBOINC $(BOINC_INC) -c -o AP26_boinc.o AP26.c
-	$(LD) $(LDFLAGS) AP26_boinc.o $(BOINC_LIB) -o $(BOINC_APP)
+AP26.o : $(SRC)
+	$(CC) $(DFLAGS) $(CFLAGS) $(BOINC_INC) -c -o $@ ../common/AP26.c
 
 clean :
-	rm -f *.o $(APP) $(BOINC_APP)
+	rm -f *.o $(APP)
 

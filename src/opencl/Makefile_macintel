@@ -17,7 +17,7 @@ LDFLAGS = $(CFLAGS)
 all : $(APP)
 
 $(APP) : $(OBJ)
-	$(LD) $(LDFLAGS) $(BOINC_LIB) -framework OpenCL -o $(APP) $^
+	$(LD) $(LDFLAGS) $(BOINC_LIB) -framework OpenCL -o $@ $^
 
 AP26.o : $(SRC)
 	$(CC) $(DFLAGS) $(CFLAGS) $(BOINC_INC) -c -o $@ ../common/AP26.c
