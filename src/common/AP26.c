@@ -744,7 +744,7 @@ int main(int argc, char *argv[])
         sclReleaseClSoft(sieve);
 
         sclReleaseClHard(hardware);
-        sclReleaseAllHardware(allhardware, found)
+        sclReleaseAllHardware(allhardware, found);
 #endif
 
 	/* Done */

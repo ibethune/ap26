@@ -111,7 +111,7 @@ static int64_t mulmod(int64_t a, int64_t b, int64_t p, long double inv)
    Otherwise N is a strong probable prime to base a.
    Assumes N odd, a < N < 2^LDBL_MULMOD_LIMIT.
  */
-static int strong_prp_cpu(int64_t a, int64_t N)
+static int strong_prp(int64_t a, int64_t N)
 {
   long double inv;
   int64_t r;

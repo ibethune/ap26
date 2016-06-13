@@ -3,9 +3,7 @@ LD = $(CC)
 
 APP = ap26_sse2_macintel64
 
-VPATH = ../common
-
-SRC = AP26.c AP26.h MAKES.H CONST.H PrimeQ_x86.h
+SRC = ../common/AP26.c AP26.h MAKES.H CONST.H PrimeQ_x86.h
 OBJ = AP26.o
 
 BOINC_DIR = ../../../boinc_707
@@ -19,10 +17,10 @@ LDFLAGS = $(CFLAGS)
 all : $(APP) 
 
 $(APP) : $(OBJ)
-	$(LD) $(LDFLAGS) $(BOINC_LIB) -o $(APP) $(OBJ)
+	$(LD) $(LDFLAGS) $(BOINC_LIB) -o $@ $^
 
 AP26.o : $(SRC)
-	$(CC) $(DFLAGS) $(CFLAGS) $(BOINC_INC) -c -o $@ $^
+	$(CC) $(DFLAGS) $(CFLAGS) $(BOINC_INC) -c -o $@ ../common/AP26.c
 
 clean :
 	rm -f *.o $(APP) 
