@@ -10,10 +10,14 @@
 
    AP26-boinc.c -- Geoffrey Reynolds, 11 September 2008.
 
+   Bryan Little 6-9-2016
+   BOINC enabled OpenCL Nvidia/AMD GPU AP26 app port
+
    Modified for SSE2 support 27 September 2009 by Bryan Little
    *NOTE* this source code is for 64-bit only
 
    Bryan Little 2 June 2016 added result hash and 10-shift search.
+   This is a 10 shift search.  Checks each K with SHIFT and SHIFT+64, SHIFT+128, ..., SHIFT+576
 
    This file is a replacement for AP26-64.c in Jaroslaw Wroblewski's AP26
    sample implementation.
@@ -37,9 +41,9 @@
 
    Compilation is controlled by the following preprocessor #defines:
 
-   -DBOINC  : Build with the BOINC library
-   -DSSE2   : Build for SSE2 CPUs (64 bit)
-   -DOPENCL : Build for GPUs using OpenCL
+   -DAP26_BOINC  : Build with the BOINC library
+   -DAP26_SSE2   : Build for SSE2 CPUs (64 bit)
+   -DAP26_OPENCL : Build for GPUs using OpenCL
 
    Testing the executable:
    -----------------------
@@ -54,9 +58,9 @@
 
    search parameters are given on the command line as
 
-     AP26 [KMIN KMAX SHIFT]
+     AP26 [KMIN KMAX SHIFT] [--device N] where N is the GPU to use
 
-   The search will begin at K=KMIN ITER=0 unless a file AP26-state.txt
+   The search will begin at K=KMIN unless a file AP26-state.txt
    exists containing a checkpoint of the form
 
      KMIN KMAX SHIFT K HASH

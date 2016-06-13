@@ -1,0 +1,29 @@
+CC = gcc
+LD = $(CC)
+
+APP = ap26_macintel64
+
+VPATH = ../common
+
+SRC = AP26.c AP26.h MAKES.H CONST.H PrimeQ_x86.h
+OBJ = AP26.o
+
+BOINC_DIR = ../../../boinc_707
+BOINC_INC = -I$(BOINC_DIR)/api -I$(BOINC_DIR)/lib
+BOINC_LIB = -L$(BOINC_DIR)/mac_build/build/Deployment/ -lboinc -lboinc_api -lstdc++
+
+DFLAGS  = -DAP26_BOINC -DAP26_SSE2
+CFLAGS  = -I . -O3 -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5
+LDFLAGS = $(CFLAGS)
+
+all : $(APP) $(BOINC_APP)
+
+$(APP) : $(OBJ)
+	$(LD) $(LDFLAGS) $(BOINC_LIB) -o $(APP) $(OBJ)
+
+AP26.o : $(SRC)
+	$(CC) $(DFLAGS) $(CFLAGS) $(BOINC_INC) -c -o $@ $<
+
+clean :
+	rm -f *.o $(APP) $(BOINC_APP)
+
