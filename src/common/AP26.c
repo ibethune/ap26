@@ -3,7 +3,9 @@
 
 // AP26 application version
 #define MAJORV 1
-#define MINORV "1-dev"
+#define MINORV 1
+#define SUFFIXV "-dev"
+
 #ifdef AP26_OPENCL
 # define TARGET "OpenCL"
 #endif
@@ -461,13 +463,13 @@ int main(int argc, char *argv[])
         cl_int err;
 #endif
 
-        printf("AP26 %s 10-shift search version %d.%d by Bryan Little and Iain Bethune\n",TARGET,MAJORV,MINORV);
+        printf("AP26 %s 10-shift search version %d.%d%s by Bryan Little and Iain Bethune\n",TARGET,MAJORV,MINORV,SUFFIXV);
 	printf("Compiled " __DATE__ " with GCC " __VERSION__ "\n");
 
 #ifdef AP26_BOINC
 	boinc_init();
 
-	fprintf(stderr, "AP26 %s 10-shift search version %d.%d by Bryan Little\n",TARGET,MAJORV,MINORV);
+	fprintf(stderr, "AP26 %s 10-shift search version %d.%d%s by Bryan Little\n",TARGET,MAJORV,MINORV,SUFFIXV);
 	fprintf(stderr, "Compiled " __DATE__ " with GCC " __VERSION__ "\n");
 #endif
 

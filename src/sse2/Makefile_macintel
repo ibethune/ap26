@@ -1,7 +1,7 @@
 CC = gcc
 LD = $(CC)
 
-APP = ap26_macintel64
+APP = ap26_sse2_macintel64
 
 VPATH = ../common
 
