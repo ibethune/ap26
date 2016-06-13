@@ -16,14 +16,14 @@ DFLAGS  = -DAP26_BOINC -DAP26_SSE2
 CFLAGS  = -I . -O3 -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5
 LDFLAGS = $(CFLAGS)
 
-all : $(APP) $(BOINC_APP)
+all : $(APP) 
 
 $(APP) : $(OBJ)
 	$(LD) $(LDFLAGS) $(BOINC_LIB) -o $(APP) $(OBJ)
 
 AP26.o : $(SRC)
-	$(CC) $(DFLAGS) $(CFLAGS) $(BOINC_INC) -c -o $@ $<
+	$(CC) $(DFLAGS) $(CFLAGS) $(BOINC_INC) -c -o $@ $^
 
 clean :
-	rm -f *.o $(APP) $(BOINC_APP)
+	rm -f *.o $(APP) 
 

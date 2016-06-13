@@ -1,30 +1,37 @@
 CC = clang++
 LD = $(CC)
 
-APP = ap26opencl_macintel64
-BOINC_APP = ap26opencl_macintel64_boinc
+APP = ap26_opencl_macintel64
+
+VPATH = ../common
 
 SRC = AP26.c simpleCL.c simpleCL.h CONST.H checkn.h clearok.h clearsol.h offset.h setupokok.h sieve.h sieve_nv.h
+OBJ = AP26.o simpleCL.o
 
 BOINC_DIR = ../../../boinc_707
 BOINC_INC = -I$(BOINC_DIR)/api -I$(BOINC_DIR)/lib
 BOINC_LIB = -L$(BOINC_DIR)/mac_build/build/Deployment/ -lboinc -lboinc_api -lboinc_opencl -lstdc++
 
-CFLAGS = -O3 -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.8.sdk -mmacosx-version-min=10.6
+DFLAGS  = -DAP26_BOINC -DAP26_OPENCL
+CFLAGS  = -I . -O3 -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.8.sdk -mmacosx-version-min=10.6
 LDFLAGS = $(CFLAGS)
 
-all : $(APP) $(BOINC_APP)
+all : $(APP)
 
-$(APP) : $(SRC)
+$(APP) : $(OBJ)
 	$(CC) $(CFLAGS) -c -o AP26.o AP26.c
 	$(CC) $(CFLAGS) -c -o simpleCL.o simpleCL.c
 	$(LD) $(LDFLAGS) -framework OpenCL -o $(APP) AP26.o simpleCL.o
 
-$(BOINC_APP) : $(SRC)
-	$(CC) $(CFLAGS) -DBOINC $(BOINC_INC) -c -o AP26_boinc.o AP26.c
-	$(CC) $(CFLAGS) -DBOINC $(BOINC_INC) -c -o simpleCL_boinc.o simpleCL.c
-	$(LD) $(LDFLAGS) $(BOINC_LIB) -framework OpenCL -o $(BOINC_APP) AP26_boinc.o simpleCL_boinc.o
+$(APP) : $(OBJ)
+	$(LD) $(LDFLAGS) $(BOINC_LIB) -framework OpenCL -o $(APP) $^
+
+AP26.o : $(SRC)
+	$(CC) $(DFLAGS) $(CFLAGS) $(BOINC_INC) -c -o $@ AP26.c
+
+simpleCL.o : $(SRC)
+	$(CC) $(DFLAGS) $(CFLAGS) $(BOINC_INC) -c -o $@ simpleCL.c
 
 clean :
-	rm -f *.o $(APP) $(BOINC_APP)
+	rm -f *.o $(APP)
 
