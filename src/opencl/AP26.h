@@ -72,7 +72,7 @@ void SearchAP26(int K, int SHIFT, int sieve_ls)
 		}
 	}
 
-#ifdef BOINC
+#ifdef AP26_BOINC
 	boinc_begin_critical_section();
 #endif
 	// offload to gpu
@@ -88,7 +88,7 @@ void SearchAP26(int K, int SHIFT, int sieve_ls)
 
 	sclFinish(hardware);
 
-#ifdef BOINC
+#ifdef AP26_BOINC
 	boinc_end_critical_section();
 #endif
 
@@ -99,7 +99,7 @@ void SearchAP26(int K, int SHIFT, int sieve_ls)
 		time_t start_time, finish_time;
 		time (&start_time);
 
-#ifdef BOINC
+#ifdef AP26_BOINC
 		boinc_begin_critical_section();
 #endif
 
@@ -145,7 +145,7 @@ void SearchAP26(int K, int SHIFT, int sieve_ls)
 
 		sclFinish(hardware);
 
-#ifdef BOINC
+#ifdef AP26_BOINC
 		boinc_end_critical_section();
 #endif
 
@@ -157,7 +157,7 @@ void SearchAP26(int K, int SHIFT, int sieve_ls)
 		// n59 array 0 checking
 		for( p=0; p<halfn59s; p+=worksize ){
 
-#ifdef BOINC
+#ifdef AP26_BOINC
 			boinc_begin_critical_section();
 #endif
 
@@ -195,7 +195,7 @@ void SearchAP26(int K, int SHIFT, int sieve_ls)
 			// call finish here to fix ctrl-c crash on AMD GPU
 			sclFinish(hardware);
 
-#ifdef BOINC
+#ifdef AP26_BOINC
 			boinc_end_critical_section();
 #endif
 
@@ -204,7 +204,7 @@ void SearchAP26(int K, int SHIFT, int sieve_ls)
 		// n59 array 1 checking
 		for( p=0; p<halfn59s; p+=worksize ){
 
-#ifdef BOINC
+#ifdef AP26_BOINC
 			boinc_begin_critical_section();
 #endif
 
@@ -237,14 +237,14 @@ void SearchAP26(int K, int SHIFT, int sieve_ls)
 			// call finish here to fix ctrl-c crash on AMD GPU
 			sclFinish(hardware);
 
-#ifdef BOINC
+#ifdef AP26_BOINC
 			boinc_end_critical_section();
 #endif
 
 		}
 
 
-#ifdef BOINC
+#ifdef AP26_BOINC
 		boinc_begin_critical_section();
 #endif
 
@@ -270,7 +270,7 @@ void SearchAP26(int K, int SHIFT, int sieve_ls)
 			e++;
 		}
 
-#ifdef BOINC
+#ifdef AP26_BOINC
 		boinc_end_critical_section();
 #endif
 

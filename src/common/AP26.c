@@ -145,7 +145,7 @@ cl_mem sclMalloc( sclHard hardware, cl_int mode, size_t size ){
                 printf( "\nclMalloc Error\n" );
                 sclPrintErrorFlags( err );
 
-#ifdef BOINC
+#ifdef AP26_BOINC
                 fprintf(stderr,"OpenCL memory allocation error, restarting in 1 minute.\n");
                 boinc_temporary_exit(60);
 #endif
@@ -362,15 +362,13 @@ void ReportSolution(int AP_Length,int difference,int64_t First_Term)
 	i = validate_ap26(AP_Length,difference,First_Term);
 
 	if (i < AP_Length){
-#ifdef AP26_BOINC
-		if (boinc_is_standalone())
-#endif
-		  printf("Non-Solution: %d %d %lld\n",AP_Length,difference,First_Term);
+
+		printf("Non-Solution: %d %d %lld\n",AP_Length,difference,First_Term);
 
 		if (val_base2_ap26(AP_Length,difference,First_Term) < AP_Length){
-			// CPU really did calculate something wrong.  It's not a prp base 2 AP
-			printf("Error: Computation error, CPU computed invalid AP, exiting...\n");
-			fprintf(stderr,"Error: Computation error, CPU computed invalid AP\n");
+			// GPU really did calculate something wrong.  It's not a prp base 2 AP
+			printf("Error: Computation error, found invalid AP, exiting...\n");
+			fprintf(stderr,"Error: Computation error, found invalid AP\n");
 			exit(EXIT_FAILURE);
 		} 
 
@@ -387,9 +385,6 @@ void ReportSolution(int AP_Length,int difference,int64_t First_Term)
 		if (results_file == NULL)
 			results_file = my_fopen(RESULTS_FILENAME,"a");
 
-#ifdef AP26_BOINC
-		if (boinc_is_standalone())
-#endif
 		printf("Solution: %d %d %lld\n",AP_Length,difference,First_Term);
 
 		if (results_file == NULL){
@@ -418,8 +413,6 @@ void checkpoint(int SHIFT, int K, int force)
 		d = 1.0;
 
 #ifdef AP26_BOINC
-	if (force)
-		boinc_begin_critical_section();
 	if (force || boinc_time_to_checkpoint()){
 #endif
 
@@ -435,8 +428,6 @@ void checkpoint(int SHIFT, int K, int force)
 		if (!force)
 			boinc_checkpoint_completed();
 	}
-	if (force)
-		boinc_end_critical_section();
 
 	boinc_fraction_done(d);
 #endif
