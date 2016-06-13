@@ -28,6 +28,7 @@
 
 #ifdef AP26_SSE2
 # include <time.h>
+# include <emmintrin.h>
 #endif
 
 #ifdef AP26_OPENCL
@@ -52,7 +53,6 @@
 # define NVIDIA 1
 # define GENERIC 0
 #endif
-
 
 #ifdef AP26_BOINC
 # include "boinc_api.h"
