@@ -700,11 +700,20 @@ int main(int argc, char *argv[])
 		}
 	}
 
+
+#ifdef AP26_BOINC
+	boinc_begin_critical_section();
+#endif
 	/* Force Final checkpoint */
 	checkpoint(SHIFT,K,1);
 
 	/* Write BOINC hash to file */
 	write_hash();
+
+#ifdef AP26_BOINC
+	boinc_end_critical_section();
+#endif
+
 
 #ifdef AP26_OPENCL
         // free memory
