@@ -7,7 +7,9 @@
 	+ Two 524mb n59 arrays because of OpenCL device memory allocation limits on AMD gpu
 
 */
-void SearchAP26(int K, int SHIFT, int sieve_ls)
+
+
+void SearchAP26(int K, int startSHIFT)
 { 
 
 	int64_t STEP;
@@ -92,9 +94,9 @@ void SearchAP26(int K, int SHIFT, int sieve_ls)
 	boinc_end_critical_section();
 #endif
 
-	int STARTSHIFT;
+	int SHIFT;
 
-	for(STARTSHIFT=SHIFT; SHIFT<(STARTSHIFT+640); SHIFT+=64){
+	for(SHIFT=startSHIFT; SHIFT<(startSHIFT+640); SHIFT+=64){
 
 		time_t start_time, finish_time;
 		time (&start_time);

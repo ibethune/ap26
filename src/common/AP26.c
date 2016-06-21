@@ -24,7 +24,8 @@
 #include <inttypes.h>
 #include <time.h>
 
-# include "CONST.H"
+#include "CONST.H"
+#include "PrimeQ_x86.h"
 
 #ifdef AP26_SSE2
 # include <time.h>
@@ -98,11 +99,7 @@
  *
  *************************/
 
-/* An alternative to GMP is provided for x86, x86_64 and ppc64. This is
-   mainly to avoid the challenge of compiling the GMP library for Windows,
-   but is also a little faster.
-*/
-#include "PrimeQ_x86.h"
+
 
 /* Global variables */
 static int KMIN, KMAX, K_DONE, K_COUNT;
@@ -127,6 +124,8 @@ int64_t *n59_1_h;
 int *sol_k_h;
 int64_t *sol_val_h;
 cl_mem ncount_d, solcount_d, n59_0_d, n59_1_d, n_result_d, OKOK_d, OK_d, offset_d, sol_k_d, sol_val_d;
+
+int sieve_ls;
 
 #endif
 
@@ -450,7 +449,7 @@ int main(int argc, char *argv[])
 
 #ifdef AP26_OPENCL
         int found=0;
-        int GPUNUM, GPU, localsize;
+        int GPUNUM, GPU;
         cl_int err;
 #endif
 
@@ -617,21 +616,21 @@ int main(int argc, char *argv[])
         unsigned int maxlocal = (unsigned int)local;
 
         if(GPU==NVIDIA){
-                // today's gpu's use 1024 max, future may use more?
+                // today's gpus use 1024 max, future may use more?
                 if(maxlocal >= 1024){
-                        localsize = 1024;
+                        sieve_ls = 1024;
                         printf("local workgroup size for sieve kernel is 1024 threads\n");
                 }
                 else{
                         printf( "selected NVIDIA GPU does not support 1024 thread local size.  Reverting to generic kernel." );
                         sieve = sclGetCLSoftware(sieve_cl,"sieve",hardware, 1);
-                        localsize = 64;
+                        sieve_ls = 64;
                         printf("local workgroup size for sieve kernel is 64 threads\n");
                 }
         }
 
         else{
-                localsize = 64;
+                sieve_ls = 64;
                 printf("local workgroup size for sieve kernel is 64 threads\n");
         }
 
@@ -681,21 +680,9 @@ int main(int argc, char *argv[])
 
 			checkpoint(SHIFT,K,0);
 
-#ifdef AP26_OPENCL
                         printf("Starting search... reporting APs of size %d and larger\n\n", MINIMUM_AP_LENGTH_TO_REPORT);
-                        SearchAP26(K,SHIFT,localsize);
-#endif
+                        SearchAP26(K,SHIFT);
 
-#ifdef AP26_SSE2
-			// start 10 shift change
-			int currSHIFT;
-
-			for(currSHIFT=SHIFT; currSHIFT<(SHIFT+640); currSHIFT+=64){
-				printf("Starting search at shift: %d reporting APs of size %d and larger\n", currSHIFT, MINIMUM_AP_LENGTH_TO_REPORT);
-				SearchAP26(K,currSHIFT);
-			}
-			// end 10 shift change
-#endif
 		 	K_DONE++;
 		}
 	}

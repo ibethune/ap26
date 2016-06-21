@@ -3,7 +3,7 @@ LD = $(CC)
 
 APP = ap26_opencl_linux64
 
-SRC = ../common/AP26.c simpleCL.c simpleCL.h CONST.H checkn.h clearok.h clearsol.h offset.h setupokok.h sieve.h sieve_nv.h
+SRC = ../common/AP26.c simpleCL.c ../common/CONST.H ../common/PrimeQ_x86.h simpleCL.h checkn.h clearok.h clearsol.h offset.h setupokok.h sieve.h sieve_nv.h
 OBJ = AP26.o simpleCL.o
 
 OCL_INC = -I /usr/local/cuda/include/CL/

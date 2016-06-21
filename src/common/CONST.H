@@ -3,9 +3,6 @@
    use int64_t instead of long long for compilers that don't yet conform to
    the C99 standard.
 
-	***************
-	Bryan Little Nov 2013
-	Not using any CPU OK/OKOK/Inverse data
 */
 #define PRIM23 INT64_C(223092870)
 #define PRIME1 29
