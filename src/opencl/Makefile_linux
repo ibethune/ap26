@@ -11,11 +11,11 @@ OCL_LIB = -L/usr/lib/x86_64-linux-gnu/ -lOpenCL
 
 BOINC_DIR = ../../../boinc_64_707
 BOINC_INC = -I$(BOINC_DIR)/include/boinc
-BOINC_LIB = -L$(BOINC_DIR)/lib -lboinc_opencl -lboinc_api -lboinc -lstdc++ -lpthread -lm
+BOINC_LIB = -L$(BOINC_DIR)/lib -lboinc_opencl -lboinc_api -lboinc -lpthread -lm
 
 DFLAGS  = -DAP26_BOINC -DAP26_OPENCL
 CFLAGS  = -I . -O3 -m64
-LDFLAGS = $(CFLAGS)
+LDFLAGS = $(CFLAGS) -static-libgcc -static-libstdc++
 
 all : $(APP)
 
