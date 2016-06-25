@@ -15,9 +15,9 @@ BOINC_LIB = -L$(BOINC_DIR)/lib -lboinc_opencl -lboinc_api -lboinc -lstdc++
 
 DFLAGS = -DAP26_BOINC -DAP26_OPENCL
 CFLAGS = -I . -O3 -m32 
-LDFLAGS = $(CFLAGS) -Wl,-enable-stdcall-fixup
+LDFLAGS = $(CFLAGS) -static -Wl,-enable-stdcall-fixup
 
-all : $(APP) 
+all : clean $(APP) 
 
 $(APP) : $(OBJ)
 	$(LD) $(LDFLAGS) $^ $(OCL_LIB) $(BOINC_LIB) -o $@

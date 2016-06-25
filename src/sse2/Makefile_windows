@@ -12,7 +12,7 @@ BOINC_LIB = -L$(BOINC_DIR)/lib -lboinc_api -lboinc -lstdc++
 
 DFLAGS = -DAP26_BOINC -DAP26_SSE2
 CFLAGS = -I . -O3 -m64
-LDFLAGS = $(CFLAGS)
+LDFLAGS = $(CFLAGS) -static
 
 all : $(APP)
 
