@@ -2,8 +2,7 @@
 
    Programs for finding large chains of primes in arithmetic progression.
 
-   History
-   -------
+## History
 
    This code is developed and maintained by Bryan Little and Iain Bethune,
    based on several versions of the AP26 software developed since 2008.
@@ -34,27 +33,25 @@
    See http://www.math.uni.wroc.pl/~jwr/AP26/AP26v3.pdf for information
    about how the algorithm works and for his copyleft notice.
 
-   Compiling
-   ---------
+## Compiling
 
    Makefiles are provided in the sse2 and opencl directories for Windows, Linux and Mac OS.
 
    Compilation is controlled by the following preprocessor #defines:
 
-   -DAP26_BOINC  : Build with the BOINC library
-   -DAP26_SSE2   : Build for SSE2 CPUs (64 bit)
-   -DAP26_OPENCL : Build for GPUs using OpenCL
+*   -DAP26_BOINC  : Build with the BOINC library
+*   -DAP26_SSE2   : Build for SSE2 CPUs (64 bit)
+*   -DAP26_OPENCL : Build for GPUs using OpenCL
 
-   Testing the executable:
-   -----------------------
+## Testing the executable:
 
-   To briefly test the AP26 executable, check that the file tests/TEST-366384.txt
-   matches the results file SOL-AP26.txt produced by executing:
+   To briefly test the AP26 executable, there are reference output files
+   in the  tests/ directory. Check that the file TEST-XXXXXX.txt matches
+   the results file SOL-AP26.txt produced by executing:
 
-     ./AP26 366384 366384 0
+     ./AP26 XXXXXX XXXXXX 0
 
-   Program operation:
-   ------------------
+## Program operation:
 
    search parameters are given on the command line as
 
