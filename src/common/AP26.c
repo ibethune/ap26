@@ -480,8 +480,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef AP26_OPENCL
-       /* Get search parameters from command line */
-        // stand alone or old boinc client
+	/* Get search parameters from command line */
         if (argc == 6){
                 sscanf(argv[1],"%d",&KMIN);
                 sscanf(argv[2],"%d",&KMAX);
@@ -489,19 +488,10 @@ int main(int argc, char *argv[])
                 // argv[4] is --device
                 sscanf(argv[5],"%d",&GPUNUM);
         }
-# ifdef AP26_BOINC
-        // boinc client >= 7.0.12
-        else if(argc == 4 && !boinc_is_standalone() ){
-                sscanf(argv[1],"%d",&KMIN);
-                sscanf(argv[2],"%d",&KMAX);
-                sscanf(argv[3],"%d",&SHIFT);
-        }
-# endif
         else{
                 printf("Usage: %s [KMIN KMAX SHIFT --device N] where N is the GPU to use.\n",argv[0]);
                 exit(EXIT_FAILURE);
         }
-
 #endif
         printf("Search parameters are KMIN: %d KMAX: %d SHIFT: %d\n", KMIN, KMAX, SHIFT);
 
@@ -518,39 +508,10 @@ int main(int argc, char *argv[])
 
 #ifdef AP26_OPENCL
         // OpenCL Init
-
-# ifdef AP26_BOINC
-        if (boinc_is_standalone()){
-                allhardware = sclGetAllHardware(&found);
-
-                hardware = allhardware[GPUNUM];
-                printf("\n using device %d\n",GPUNUM);
-        }
-        else
-        {
-                int retval = 0;
-                cl_platform_id platform = NULL;
-                cl_device_id device;
-
-#  if BOINC_MAJOR_VERSION < 7 || (BOINC_MAJOR_VERSION == 7 && BOINC_MINOR_VERSION == 0)
-                retval = boinc_get_opencl_ids(&device, &platform);
-#  else
-                retval = boinc_get_opencl_ids(argc, argv, 0, &device, &platform);
-#  endif
-                if (retval) {
-                        fprintf(stderr, "Error: boinc_get_opencl_ids() failed with error %d\n",retval);
-                        exit(EXIT_FAILURE);
-                }
-
-                hardware.platform = platform;
-                hardware.device = device;
-        }
-# else
         allhardware = sclGetAllHardware(&found);
 
         hardware = allhardware[GPUNUM];
         printf("\n using device %d\n",GPUNUM);
-# endif
 
         // Check GPU vendor
         char vend[1024];
