@@ -8,6 +8,42 @@
 
 */
 
+// sleep CPU thread while GPU is busy
+void sleepcpu(){
+
+	cl_event kernelsDone;
+	cl_int err;
+	cl_int info;
+	struct timespec sleep_time;
+	sleep_time.tv_sec = 0;
+	sleep_time.tv_nsec = 100000000;	// 100ms
+
+	err = clEnqueueMarker( hardware.queue, &kernelsDone);
+	if ( err != CL_SUCCESS ) {
+		printf( "\nError on Finish Marker");
+		sclPrintErrorFlags(err); 
+	}
+
+	clFlush(hardware.queue);
+
+	err = clGetEventInfo(kernelsDone, CL_EVENT_COMMAND_EXECUTION_STATUS, sizeof(cl_int), &info, NULL);
+	if ( err != CL_SUCCESS ) {
+		printf( "\nclGetEventInfo Error\n" );
+		sclPrintErrorFlags( err );
+       	}
+
+	// sleep until event complete
+	while(info >= 0 && info != CL_COMPLETE){
+		nanosleep(&sleep_time,NULL);
+		err = clGetEventInfo(kernelsDone, CL_EVENT_COMMAND_EXECUTION_STATUS, sizeof(cl_int), &info, NULL);
+		if ( err != CL_SUCCESS ) {
+			printf( "\nclGetEventInfo Error\n" );
+			sclPrintErrorFlags( err );
+	       	}
+	}
+	clReleaseEvent(kernelsDone);
+}
+
 
 void SearchAP26(int K, int startSHIFT)
 { 
@@ -74,9 +110,7 @@ void SearchAP26(int K, int startSHIFT)
 		}
 	}
 
-#ifdef AP26_BOINC
-	boinc_begin_critical_section();
-#endif
+
 	// offload to gpu
 	sclWrite(hardware, halfn59s * sizeof(int64_t), n59_0_d, n59_0_h);
 	sclWrite(hardware, halfn59s * sizeof(int64_t), n59_1_d, n59_1_h);
@@ -88,11 +122,6 @@ void SearchAP26(int K, int startSHIFT)
 	sclEnqueueKernel(hardware, offset, global_size, local_size);
 	// end offset
 
-	sclFinish(hardware);
-
-#ifdef AP26_BOINC
-	boinc_end_critical_section();
-#endif
 
 	int SHIFT;
 
@@ -101,9 +130,6 @@ void SearchAP26(int K, int startSHIFT)
 		time_t start_time, finish_time;
 		time (&start_time);
 
-#ifdef AP26_BOINC
-		boinc_begin_critical_section();
-#endif
 
 		// clearok kernel
 		global_size[0]=23744; global_size[1]=1;
@@ -145,11 +171,6 @@ void SearchAP26(int K, int startSHIFT)
 		sclEnqueueKernel(hardware, clearsol, global_size, local_size);
 		// end clearsol
 
-		sclFinish(hardware);
-
-#ifdef AP26_BOINC
-		boinc_end_critical_section();
-#endif
 
 
 		// kernel config for sieve
@@ -159,9 +180,6 @@ void SearchAP26(int K, int startSHIFT)
 		// n59 array 0 checking
 		for( p=0; p<halfn59s; p+=worksize ){
 
-#ifdef AP26_BOINC
-			boinc_begin_critical_section();
-#endif
 
 			// sieve kernel
 			sclSetKernelArg(sieve, 0, sizeof(cl_mem), &n59_0_d);
@@ -194,21 +212,12 @@ void SearchAP26(int K, int startSHIFT)
 			sclEnqueueKernel(hardware, checkn, global_size, local_size);
 			// end checkn
 
-			// call finish here to fix ctrl-c crash on AMD GPU
-			sclFinish(hardware);
-
-#ifdef AP26_BOINC
-			boinc_end_critical_section();
-#endif
 
 		}
 
 		// n59 array 1 checking
 		for( p=0; p<halfn59s; p+=worksize ){
 
-#ifdef AP26_BOINC
-			boinc_begin_critical_section();
-#endif
 
 			// sieve kernel
 			sclSetKernelArg(sieve, 0, sizeof(cl_mem), &n59_1_d);
@@ -236,25 +245,20 @@ void SearchAP26(int K, int startSHIFT)
 			sclEnqueueKernel(hardware, checkn, global_size, local_size);
 			// end checkn
 
-			// call finish here to fix ctrl-c crash on AMD GPU
-			sclFinish(hardware);
-
-#ifdef AP26_BOINC
-			boinc_end_critical_section();
-#endif
 
 		}
 
 
-#ifdef AP26_BOINC
-		boinc_begin_critical_section();
-#endif
+		// sleep CPU thread while GPU is busy
+		sleepcpu();
 
-		// copy n results and n count to local memory
+
+		// copy results to host memory
+		// blocking read
 		sclRead(hardware, sol * sizeof(int), sol_k_d, sol_k_h);
 		sclRead(hardware, sol * sizeof(int64_t), sol_val_d, sol_val_h);
 
-		sclFinish(hardware);
+
 
 		int e=0;
 		while(sol_k_h[e] != 0){
@@ -272,9 +276,7 @@ void SearchAP26(int K, int startSHIFT)
 			e++;
 		}
 
-#ifdef AP26_BOINC
-		boinc_end_critical_section();
-#endif
+
 
 		printf("Computation for K: %d SHIFT: %d complete.\n", K, SHIFT);
 
