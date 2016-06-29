@@ -12,6 +12,9 @@
 #ifdef AP26_SSE2
 # define TARGET "SSE2"
 #endif
+#ifdef AP26_AVX2
+# define TARGET "AVX2"
+#endif
 
 // Need both of these???
 #define __STDC_FORMAT_MACROS
@@ -30,6 +33,11 @@
 #ifdef AP26_SSE2
 # include <time.h>
 # include <emmintrin.h>
+#endif
+
+#ifdef AP26_AVX2
+# include <time.h>
+# include <immintrin.h>
 #endif
 
 #ifdef AP26_OPENCL
@@ -467,7 +475,7 @@ int main(int argc, char *argv[])
 	check_fpu_mode();
 
 	/* Get search parameters from command line */
-#ifdef AP26_SSE2
+#if defined(AP26_SSE2) || defined (AP26_AVX2)
 	if (argc == 4){
 		sscanf(argv[1],"%d",&KMIN);
 		sscanf(argv[2],"%d",&KMAX);
