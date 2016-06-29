@@ -185,6 +185,8 @@ void sclPrintErrorFlags( cl_int flag ){
 		default:
 			printf("\nUnknown error code: %d\n",flag);    
 	}
+
+	exit(EXIT_FAILURE);
 }
 
 char* _sclLoadProgramSource( const char *filename )
