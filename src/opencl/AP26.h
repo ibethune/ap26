@@ -1,10 +1,10 @@
 
 /*
 	***************
-	Bryan Little May 2014
-	+ Using ~1.1 gigabytes RAM on device and host
+	Bryan Little Jun 29 2016
+	+ Using ~1.1GB VRAM on GPU
+	+ Using 415MB RAM on host
 	+ This is code tuned for OpenCL devices.
-	+ Two 524mb n59 arrays because of OpenCL device memory allocation limits on AMD gpu
 
 */
 
@@ -75,7 +75,7 @@ void SearchAP26(int K, int startSHIFT)
 	// note: n53MAX == 137375320
 
 	int count=0;
-	int count2=0;
+	int devicearray=0;
 
 	for(i31=0;i31<7;++i31)
 	for(i37=0;i37<13;++i37)
@@ -91,14 +91,30 @@ void SearchAP26(int K, int startSHIFT)
 				n53=n47;
 				for(i53=(PRIME7-24);i53>0;i53--){
 					//n59=n53;
-					if(count < halfn59s){
-						n59_0_h[count]=n53;
-						count++;
+
+					n59_h[count]=n53;
+					count++;
+					if(count == quartern59s){
+						if(devicearray == 0){
+							// offload to gpu, blocking
+							sclWrite(hardware, quartern59s * sizeof(int64_t), n59_0_d, n59_h);
+						}
+						else if(devicearray == 1){
+							// offload to gpu, blocking
+							sclWrite(hardware, quartern59s * sizeof(int64_t), n59_1_d, n59_h);
+						}
+						else if(devicearray == 2){
+							// offload to gpu, blocking
+							sclWrite(hardware, quartern59s * sizeof(int64_t), n59_2_d, n59_h);
+						}
+						else if(devicearray == 3){
+							// offload to gpu, blocking
+							sclWrite(hardware, quartern59s * sizeof(int64_t), n59_3_d, n59_h);
+						}
+						devicearray++;
+						count=0;
 					}
-					else{
-						n59_1_h[count2]=n53;
-						count2++;
-					}
+
 					n53+=S53;
 					if(n53>=MOD)n53-=MOD;
 				}
@@ -110,10 +126,6 @@ void SearchAP26(int K, int startSHIFT)
 		}
 	}
 
-
-	// offload to gpu
-	sclWrite(hardware, halfn59s * sizeof(int64_t), n59_0_d, n59_0_h);
-	sclWrite(hardware, halfn59s * sizeof(int64_t), n59_1_d, n59_1_h);
 
 	// offset kernel
         global_size[0]=576; global_size[1]=1;
@@ -172,82 +184,57 @@ void SearchAP26(int K, int startSHIFT)
 		// end clearsol
 
 
-
 		// kernel config for sieve
 		const int worksize=1571840;	// must be divisible by 64 and 1024
 
 		int p;
-		// n59 array 0 checking
-		for( p=0; p<halfn59s; p+=worksize ){
 
+		for(devicearray=0; devicearray<4; devicearray++){
+			for( p=0; p<quartern59s; p+=worksize ){
+				// sieve kernel
+				if(devicearray == 0){
+					sclSetKernelArg(sieve, 0, sizeof(cl_mem), &n59_0_d);
+				}
+				else if(devicearray == 1){
+					sclSetKernelArg(sieve, 0, sizeof(cl_mem), &n59_1_d);
+				}
+				else if(devicearray == 2){
+					sclSetKernelArg(sieve, 0, sizeof(cl_mem), &n59_2_d);
+				}
+				else if(devicearray == 3){
+					sclSetKernelArg(sieve, 0, sizeof(cl_mem), &n59_3_d);
+				}
+				sclSetKernelArg(sieve, 1, sizeof(int64_t), &S59);
+				sclSetKernelArg(sieve, 2, sizeof(int), &SHIFT);
+				sclSetKernelArg(sieve, 3, sizeof(cl_mem), &n_result_d);
+				sclSetKernelArg(sieve, 4, sizeof(cl_mem), &OKOK_d);
+				sclSetKernelArg(sieve, 5, sizeof(cl_mem), &ncount_d);
+				sclSetKernelArg(sieve, 6, sizeof(int), &p);
+				global_size[0]=worksize; global_size[1]=1;
+				local_size[0]=sieve_ls; local_size[1]=1;
+				sclEnqueueKernel(hardware, sieve, global_size, local_size);
+				// end sieve
 
-			// sieve kernel
-			sclSetKernelArg(sieve, 0, sizeof(cl_mem), &n59_0_d);
-			sclSetKernelArg(sieve, 1, sizeof(int64_t), &S59);
-			sclSetKernelArg(sieve, 2, sizeof(int), &SHIFT);
-			sclSetKernelArg(sieve, 3, sizeof(cl_mem), &n_result_d);
-			sclSetKernelArg(sieve, 4, sizeof(cl_mem), &OKOK_d);
-			sclSetKernelArg(sieve, 5, sizeof(cl_mem), &ncount_d);
-			sclSetKernelArg(sieve, 6, sizeof(int), &p);
-			global_size[0]=worksize; global_size[1]=1;
-			local_size[0]=sieve_ls; local_size[1]=1;
-			sclEnqueueKernel(hardware, sieve, global_size, local_size);
-			// end sieve
-
-/*			int* numbern;
-			numbern = (int*)malloc(sizeof(int));
-			sclRead(hardware, sizeof(int), ncount_d, numbern);
-			printf("narray size: %d of max %d\n",numbern[0],numn);
-			free(numbern);
-*/
-			// checkn kernel
-			sclSetKernelArg(checkn, 0, sizeof(cl_mem), &n_result_d);
-			sclSetKernelArg(checkn, 1, sizeof(int64_t), &STEP);
-			sclSetKernelArg(checkn, 2, sizeof(cl_mem), &sol_k_d);
-			sclSetKernelArg(checkn, 3, sizeof(cl_mem), &sol_val_d);
-			sclSetKernelArg(checkn, 4, sizeof(cl_mem), &ncount_d);
-			sclSetKernelArg(checkn, 5, sizeof(cl_mem), &solcount_d);
-			global_size[0]=numn; global_size[1]=1;
-			local_size[0]=64; local_size[1]=1;
-			sclEnqueueKernel(hardware, checkn, global_size, local_size);
-			// end checkn
-
-
-		}
-
-		// n59 array 1 checking
-		for( p=0; p<halfn59s; p+=worksize ){
-
-
-			// sieve kernel
-			sclSetKernelArg(sieve, 0, sizeof(cl_mem), &n59_1_d);
-			sclSetKernelArg(sieve, 1, sizeof(int64_t), &S59);
-			sclSetKernelArg(sieve, 2, sizeof(int), &SHIFT);
-			sclSetKernelArg(sieve, 3, sizeof(cl_mem), &n_result_d);
-			sclSetKernelArg(sieve, 4, sizeof(cl_mem), &OKOK_d);
-			sclSetKernelArg(sieve, 5, sizeof(cl_mem), &ncount_d);
-			sclSetKernelArg(sieve, 6, sizeof(int), &p);
-			global_size[0]=worksize; global_size[1]=1;
-			local_size[0]=sieve_ls; local_size[1]=1;
-			sclEnqueueKernel(hardware, sieve, global_size, local_size);
-			// end sieve
-
-
-			// checkn kernel
-			sclSetKernelArg(checkn, 0, sizeof(cl_mem), &n_result_d);
-			sclSetKernelArg(checkn, 1, sizeof(int64_t), &STEP);
-			sclSetKernelArg(checkn, 2, sizeof(cl_mem), &sol_k_d);
-			sclSetKernelArg(checkn, 3, sizeof(cl_mem), &sol_val_d);
-			sclSetKernelArg(checkn, 4, sizeof(cl_mem), &ncount_d);
-			sclSetKernelArg(checkn, 5, sizeof(cl_mem), &solcount_d);
-			global_size[0]=numn; global_size[1]=1;
-			local_size[0]=64; local_size[1]=1;
-			sclEnqueueKernel(hardware, checkn, global_size, local_size);
-			// end checkn
-
+	/*			int* numbern;
+				numbern = (int*)malloc(sizeof(int));
+				sclRead(hardware, sizeof(int), ncount_d, numbern);
+				printf("narray size: %d of max %d\n",numbern[0],numn);
+				free(numbern);
+	*/
+				// checkn kernel
+				sclSetKernelArg(checkn, 0, sizeof(cl_mem), &n_result_d);
+				sclSetKernelArg(checkn, 1, sizeof(int64_t), &STEP);
+				sclSetKernelArg(checkn, 2, sizeof(cl_mem), &sol_k_d);
+				sclSetKernelArg(checkn, 3, sizeof(cl_mem), &sol_val_d);
+				sclSetKernelArg(checkn, 4, sizeof(cl_mem), &ncount_d);
+				sclSetKernelArg(checkn, 5, sizeof(cl_mem), &solcount_d);
+				global_size[0]=numn; global_size[1]=1;
+				local_size[0]=64; local_size[1]=1;
+				sclEnqueueKernel(hardware, checkn, global_size, local_size);
+				// end checkn
+			}
 
 		}
-
 
 		// sleep CPU thread while GPU is busy
 		sleepcpu();

@@ -39,7 +39,6 @@ extern "C" {
 
 #define WORKGROUP_X 64
 #define WORKGROUP_Y 2
-#define DEBUG_CL
 
 #ifndef _OCLUTILS_STRUCTS
 typedef struct {
@@ -65,7 +64,6 @@ typedef struct {
 /* ####### Device memory allocation read and write  ####### */
 
 //cl_mem 			sclMalloc( sclHard hardware, cl_int mode, size_t size );
-cl_mem 			sclMallocWrite( sclHard hardware, cl_int mode, size_t size, void* hostPointer );
 void 			sclWrite( sclHard hardware, size_t size, cl_mem buffer, void* hostPointer );
 void			sclRead( sclHard hardware, size_t size, cl_mem buffer, void *hostPointer );
 
@@ -98,27 +96,7 @@ void 			sclPrintDeviceNamePlatforms( sclHard* hardList, int found );
 
 /* ####### Device execution ############################### */
 
-cl_event 		sclLaunchKernel( sclHard hardware, sclSoft software, size_t *global_work_size, size_t *local_work_size );
-
-//Bryan Little
 void			sclEnqueueKernel( sclHard hardware, sclSoft software, size_t *global_work_size, size_t *local_work_size );
-//cl_event		sclEnqueueKernel( sclHard hardware, sclSoft software, size_t *global_work_size, size_t *local_work_size );
-
-cl_event		sclSetArgsLaunchKernel( sclHard hardware, sclSoft software, size_t *global_work_size, size_t *local_work_size, 
-						const char* sizesValues, ... );
-//Bryan Little
-/*
-cl_event		sclSetArgsEnqueueKernel( sclHard hardware, sclSoft software, size_t *global_work_size, size_t *local_work_size, 
-						 const char* sizesValues, ... );
-
-cl_event		sclManageArgsLaunchKernel( sclHard hardware, sclSoft software, size_t *global_work_size, size_t *local_work_size,
-						   const char* sizesValues, ... );
-*/
-/* ######################################################## */
-
-/* ####### Event queries ################################## */
-
-cl_ulong 		sclGetEventTime( sclHard hardware, cl_event event );
 
 /* ######################################################## */
 
@@ -131,7 +109,6 @@ cl_int			sclFinish( sclHard hardware );
 /* ####### Kernel argument setting ######################## */
 
 void 			sclSetKernelArg( sclSoft software, int argnum, size_t typeSize, void *argument );
-void			sclSetKernelArgs( sclSoft software, const char *sizesValues, ... );
 
 /* ######################################################## */
 
@@ -140,20 +117,12 @@ void			sclSetKernelArgs( sclSoft software, const char *sizesValues, ... );
 sclHard 		sclGetGPUHardware( int nDevice, int* found );
 sclHard 		sclGetCPUHardware( int nDevice, int* found );
 sclHard*		sclGetAllHardware( int* found );
-sclHard 		sclGetFastestDevice( sclHard* hardList, int found );
 
 /* ######################################################## */
 
 /* INTERNAL FUNCITONS */
 
-/* ####### debug ########################################## */
-
-void 			_sclWriteArgOnAFile( int argnum, void* arg, size_t size, const char* diff );
-
-/* ######################################################## */
-
 /* ####### cl software management ######################### */
-//Bryan Little
 void 			_sclBuildProgram( cl_program program, cl_device_id devices, const char* pName, int opt );
 cl_kernel 		_sclCreateKernel( sclSoft software );
 cl_program 		_sclCreateProgram( char* program_source, cl_context context );

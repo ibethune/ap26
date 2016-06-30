@@ -52,8 +52,9 @@
 # include "sieve.h"
 # include "sieve_nv.h"
 
-# define numn59s 137375320
-# define halfn59s 68687660
+# define numn59s 	137375320
+# define quartern59s 	34343830
+
 // actual numn used is usually < 100,000 we use 1,000,000 here to prevent overflowing the array
 # define numn 1000000
 # define numOK 23693
@@ -127,11 +128,11 @@ sclSoft setok;
 sclSoft setupokok;
 sclSoft sieve;
 
-int64_t *n59_0_h;
-int64_t *n59_1_h;
+int64_t *n59_h;
 int *sol_k_h;
 int64_t *sol_val_h;
-cl_mem ncount_d, solcount_d, n59_0_d, n59_1_d, n_result_d, OKOK_d, OK_d, offset_d, sol_k_d, sol_val_d;
+cl_mem ncount_d, solcount_d, n_result_d, OKOK_d, OK_d, offset_d, sol_k_d, sol_val_d;
+cl_mem n59_0_d, n59_1_d, n59_2_d, n59_3_d;
 
 int sieve_ls;
 
@@ -150,14 +151,14 @@ cl_mem sclMalloc( sclHard hardware, cl_int mode, size_t size ){
         buffer = clCreateBuffer( hardware.context, mode, size, NULL, &err );
         if ( err != CL_SUCCESS ) {
                 printf( "\nclMalloc Error\n" );
-                sclPrintErrorFlags( err );
 
 #ifdef AP26_BOINC
                 fprintf(stderr,"OpenCL memory allocation error, restarting in 1 minute.\n");
                 boinc_temporary_exit(60);
+#else
+                sclPrintErrorFlags( err );
 #endif
         }
-
 
         return buffer;
 }
@@ -612,13 +613,14 @@ int main(int argc, char *argv[])
 
         // memory allocation
         // host memory
-        n59_0_h = (int64_t*)malloc(halfn59s * sizeof(int64_t));
-        n59_1_h = (int64_t*)malloc(halfn59s * sizeof(int64_t));
+        n59_h = (int64_t*)malloc(quartern59s * sizeof(int64_t));
         sol_k_h = (int*)malloc(sol * sizeof(int));
         sol_val_h = (int64_t*)malloc(sol * sizeof(int64_t));
         // device memory
-        n59_0_d = sclMalloc(hardware, CL_MEM_READ_WRITE, halfn59s * sizeof(int64_t));
-        n59_1_d = sclMalloc(hardware, CL_MEM_READ_WRITE, halfn59s * sizeof(int64_t));
+        n59_0_d = sclMalloc(hardware, CL_MEM_READ_WRITE, quartern59s * sizeof(int64_t));
+        n59_1_d = sclMalloc(hardware, CL_MEM_READ_WRITE, quartern59s * sizeof(int64_t));
+        n59_2_d = sclMalloc(hardware, CL_MEM_READ_WRITE, quartern59s * sizeof(int64_t));
+        n59_3_d = sclMalloc(hardware, CL_MEM_READ_WRITE, quartern59s * sizeof(int64_t));
         ncount_d = sclMalloc(hardware, CL_MEM_READ_WRITE, sizeof(int));
         solcount_d = sclMalloc(hardware, CL_MEM_READ_WRITE, sizeof(int));
         n_result_d = sclMalloc(hardware, CL_MEM_READ_WRITE, numn * sizeof(int64_t));
@@ -674,8 +676,7 @@ int main(int argc, char *argv[])
 #ifdef AP26_OPENCL
         // free memory
         // host
-        free(n59_0_h);
-        free(n59_1_h);
+        free(n59_h);
         free(sol_k_h);
         free(sol_val_h);
         // device
@@ -683,6 +684,8 @@ int main(int argc, char *argv[])
         sclReleaseMemObject(solcount_d);
         sclReleaseMemObject(n59_0_d);
         sclReleaseMemObject(n59_1_d);
+        sclReleaseMemObject(n59_2_d);
+        sclReleaseMemObject(n59_3_d);
         sclReleaseMemObject(n_result_d);
         sclReleaseMemObject(OK_d);
         sclReleaseMemObject(OKOK_d);
