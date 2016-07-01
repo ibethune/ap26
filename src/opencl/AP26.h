@@ -1,10 +1,11 @@
 
 /*
 	***************
-	Bryan Little Jun 29 2016
+	Bryan Little Jun 30 2016
 	+ Using ~1.1GB VRAM on GPU
-	+ Using 415MB RAM on host
+	+ Using ~415MB RAM on host
 	+ This is code tuned for OpenCL devices.
+	+ Limit kernel queue depth to 1.5 sec execution time for windows TDR and BOINC pause
 
 */
 
@@ -16,7 +17,7 @@ void sleepcpu(){
 	cl_int info;
 	struct timespec sleep_time;
 	sleep_time.tv_sec = 0;
-	sleep_time.tv_nsec = 100000000;	// 100ms
+	sleep_time.tv_nsec = 10000000;	// 10ms
 
 	err = clEnqueueMarker( hardware.queue, &kernelsDone);
 	if ( err != CL_SUCCESS ) {
@@ -45,6 +46,20 @@ void sleepcpu(){
 }
 
 
+struct timespec diff(struct timespec start, struct timespec end)
+{
+	struct timespec temp;
+	if ((end.tv_nsec-start.tv_nsec)<0) {
+		temp.tv_sec = end.tv_sec-start.tv_sec-1;
+		temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
+	} else {
+		temp.tv_sec = end.tv_sec-start.tv_sec;
+		temp.tv_nsec = end.tv_nsec-start.tv_nsec;
+	}
+	return temp;
+}
+
+
 void SearchAP26(int K, int startSHIFT)
 { 
 
@@ -56,6 +71,10 @@ void SearchAP26(int K, int startSHIFT)
 	int64_t S31, S37, S41, S43, S47, S53, S59;
         size_t global_size[2];
         size_t local_size[2];
+	int profile=1;
+	int profileq;
+	int numinq=0;
+	struct timespec proftime, pstime, petime;
 
 	time_t total_start_time, total_finish_time;
 	time (&total_start_time);
@@ -186,11 +205,16 @@ void SearchAP26(int K, int startSHIFT)
 
 		// kernel config for sieve
 		const int worksize=1571840;	// must be divisible by 64 and 1024
-
 		int p;
 
 		for(devicearray=0; devicearray<4; devicearray++){
 			for( p=0; p<quartern59s; p+=worksize ){
+
+				if(profile){
+					sleepcpu();  // clear queue
+					clock_gettime(CLOCK_MONOTONIC, &pstime);
+				}
+
 				// sieve kernel
 				if(devicearray == 0){
 					sclSetKernelArg(sieve, 0, sizeof(cl_mem), &n59_0_d);
@@ -232,13 +256,40 @@ void SearchAP26(int K, int startSHIFT)
 				local_size[0]=64; local_size[1]=1;
 				sclEnqueueKernel(hardware, checkn, global_size, local_size);
 				// end checkn
+
+
+				if(profile){
+					// kernel profile to limit ocl queue to less than 1.5sec for windows TDR and BOINC pausing
+					sclFinish(hardware);
+					clock_gettime(CLOCK_MONOTONIC, &petime);
+					proftime = diff(pstime,petime);
+					fprintf(stderr, "kernel profile (sec): %d, (nanoseconds): %d\n", proftime.tv_sec, proftime.tv_nsec);
+					int64_t totalnano = (proftime.tv_sec * 1000000000) + proftime.tv_nsec;
+					if(totalnano < 1500000000){
+						profileq = 1500000000 / totalnano;
+					}
+					else{
+						profileq = 1;
+					}
+					fprintf(stderr, "calculated max kernel queue length: %d\n",profileq);
+					profile=0;
+				}				
+				else{
+					numinq++;
+				}
+
+				if(numinq == profileq){
+					// sleep CPU thread while GPU is busy
+					sleepcpu();
+					numinq = 0;
+				}
+
 			}
 
 		}
 
 		// sleep CPU thread while GPU is busy
 		sleepcpu();
-
 
 		// copy results to host memory
 		// blocking read
