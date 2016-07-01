@@ -516,11 +516,26 @@ int main(int argc, char *argv[])
 	}
 
 #ifdef AP26_OPENCL
+
         // OpenCL Init
         allhardware = sclGetAllHardware(&found);
 
         hardware = allhardware[GPUNUM];
         printf("\n using device %d\n",GPUNUM);
+
+
+# ifdef AP26_BOINC
+        int64_t gmem = (int64_t)_sclGetMaxGlobalMemSize(hardware.device);
+        int64_t maxalloc = (int64_t)_sclGetMaxMemAllocSize(hardware.device);
+        fprintf(stderr, "GPU global memory available: %lld\n", gmem);
+        fprintf(stderr, "GPU max memory allocation:   %lld\n", maxalloc);
+
+	// raise thread priority
+	BOINC_OPTIONS options;
+	boinc_options_defaults(options);
+	options.normal_thread_priority = true; 
+	boinc_init_options(&options);
+# endif
 
         // Check GPU vendor
         char vend[1024];
@@ -604,12 +619,6 @@ int main(int argc, char *argv[])
                 printf("local workgroup size for sieve kernel is 64 threads\n");
         }
 
-# ifdef AP26_BOINC
-        int64_t gmem = (int64_t)_sclGetMaxGlobalMemSize(hardware.device);
-        int64_t maxalloc = (int64_t)_sclGetMaxMemAllocSize(hardware.device);
-        fprintf(stderr, "GPU global memory available: %lld\n", gmem);
-        fprintf(stderr, "GPU max memory allocation:   %lld\n", maxalloc);
-# endif
 
         // memory allocation
         // host memory
