@@ -73,7 +73,6 @@ void SearchAP26(int K, int startSHIFT)
         size_t local_size[2];
 	int profile=1;
 	int profileq;
-	int numinq=0;
 	struct timespec proftime, pstime, petime;
 
 	time_t total_start_time, total_finish_time;
@@ -161,6 +160,7 @@ void SearchAP26(int K, int startSHIFT)
 		time_t start_time, finish_time;
 		time (&start_time);
 
+		int numinq=0;
 
 		// clearok kernel
 		global_size[0]=23744; global_size[1]=1;
