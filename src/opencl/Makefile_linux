@@ -1,9 +1,13 @@
 CC = g++
 LD = $(CC)
 
+.SUFFIXES:
+.SUFFIXES: .o .c .h .cl .cpp
+
 APP = ap26_opencl_linux64
 
-SRC = ../common/AP26.c simpleCL.c ../common/CONST.H ../common/PrimeQ_x86.h simpleCL.h checkn.h clearok.h clearsol.h offset.h setupokok.h sieve.h sieve_nv.h
+SRC = ../common/AP26.cpp simpleCL.c ../common/CONST.H ../common/PrimeQ_x86.h simpleCL.h kernels/checkn.cl kernels/setok.cl kernels/clearok.cl kernels/clearsol.cl kernels/offset.cl kernels/setupokok.cl kernels/sieve.cl kernels/sieve_nv.cl
+KERNEL_HEADERS = kernels/checkn.h kernels/setok.h kernels/clearok.h kernels/clearsol.h kernels/offset.h kernels/setupokok.h kernels/sieve.h kernels/sieve_nv.h
 OBJ = AP26.o simpleCL.o
 
 OCL_INC = -I /usr/local/cuda/include/CL/
@@ -14,7 +18,7 @@ BOINC_INC = -I$(BOINC_DIR)/include/boinc
 BOINC_LIB = -L$(BOINC_DIR)/lib -lboinc_opencl -lboinc_api -lboinc -lpthread -lm
 
 DFLAGS  = -DAP26_BOINC -DAP26_OPENCL
-CFLAGS  = -I . -O3 -m64
+CFLAGS  = -I . -I kernels -O3 -m64
 LDFLAGS = $(CFLAGS) -static-libgcc -static-libstdc++
 
 all : $(APP)
@@ -22,12 +26,15 @@ all : $(APP)
 $(APP) : $(OBJ)
 	$(LD) $(LDFLAGS) $^ $(OCL_LIB) $(BOINC_LIB) -o $@
 
-AP26.o : $(SRC)
-	$(CC) $(DFLAGS) $(CFLAGS) $(OCL_INC) $(BOINC_INC) -c -o $@ ../common/AP26.c
+AP26.o : $(SRC) $(KERNEL_HEADERS)
+	$(CC) $(DFLAGS) $(CFLAGS) $(OCL_INC) $(BOINC_INC) -c -o $@ ../common/AP26.cpp
 
 simpleCL.o : $(SRC)
 	$(CC) $(DFLAGS) $(CFLAGS) $(OCL_INC) $(BOINC_INC) -c -o $@ simpleCL.c
 
+.cl.h:
+	./cltoh.pl $< > $@
+
 clean :
-	rm -f *.o $(APP)
+	rm -f *.o kernels/*.h $(APP)
 
