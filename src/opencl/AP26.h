@@ -5,7 +5,7 @@
 	+ Using ~1.1GB VRAM on GPU
 	+ Using ~415MB RAM on host
 	+ This is code tuned for OpenCL devices.
-	+ Limit kernel queue depth to 1.5 sec execution time for windows TDR and BOINC pause
+	+ Limit kernel queue depth to .1 sec to improve screen refresh
 
 */
 
@@ -281,8 +281,8 @@ void SearchAP26(int K, int startSHIFT)
 					proftime = diff(pstime,petime);
 					fprintf(stderr, "kernel profile (sec): %d, (nanoseconds): %d\n", proftime.tv_sec, proftime.tv_nsec);
 					int64_t totalnano = (proftime.tv_sec * 1000000000) + proftime.tv_nsec;
-					if(totalnano < 1500000000){
-						profileq = 1500000000 / totalnano;
+					if(totalnano < 100000000){
+						profileq = 100000000 / totalnano;
 					}
 					else{
 						profileq = 1;
