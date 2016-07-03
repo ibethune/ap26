@@ -466,8 +466,6 @@ int main(int argc, char *argv[])
 	printf("Compiled " __DATE__ " with GCC " __VERSION__ "\n");
 
 #ifdef AP26_BOINC
-	boinc_init();
-
 	fprintf(stderr, "AP26 %s 10-shift search version %d.%d%s by Bryan Little\n",TARGET,MAJORV,MINORV,SUFFIXV);
 	fprintf(stderr, "Compiled " __DATE__ " with GCC " __VERSION__ "\n");
 #endif
@@ -477,6 +475,8 @@ int main(int argc, char *argv[])
 
 	/* Get search parameters from command line */
 #if defined(AP26_SSE2) || defined (AP26_AVX2)
+	boinc_init();
+
 	if (argc == 4){
 		sscanf(argv[1],"%d",&KMIN);
 		sscanf(argv[2],"%d",&KMAX);
@@ -489,6 +489,12 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef AP26_OPENCL
+	// raise thread priority
+	BOINC_OPTIONS options;
+	boinc_options_defaults(options);
+	options.normal_thread_priority = true; 
+	boinc_init_options(&options);
+
 	/* Get search parameters from command line */
         if (argc == 6){
                 sscanf(argv[1],"%d",&KMIN);
@@ -529,12 +535,6 @@ int main(int argc, char *argv[])
         int64_t maxalloc = (int64_t)_sclGetMaxMemAllocSize(hardware.device);
         fprintf(stderr, "GPU global memory available: %lld\n", gmem);
         fprintf(stderr, "GPU max memory allocation:   %lld\n", maxalloc);
-
-	// raise thread priority
-	BOINC_OPTIONS options;
-	boinc_options_defaults(options);
-	options.normal_thread_priority = true; 
-	boinc_init_options(&options);
 # endif
 
         // Check GPU vendor
