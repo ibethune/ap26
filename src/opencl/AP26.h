@@ -11,9 +11,9 @@
 
 // Code snippet from https://gist.github.com/jbenet/1087739
 #ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
-#include <mach/clock.h>
-#include <mach/mach.h>
-#define CLOCK_MONOTONIC 0
+#  include <mach/clock.h>
+#  include <mach/mach.h>
+#  define CLOCK_MONOTONIC 0
 void clock_gettime(int ignored, struct timespec *ts){
   clock_serv_t cclock;
   mach_timespec_t mts;
