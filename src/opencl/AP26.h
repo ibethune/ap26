@@ -275,7 +275,7 @@ void SearchAP26(int K, int startSHIFT)
 
 
 				if(profile){
-					// kernel profile to limit ocl queue to less than 1.5sec for windows TDR and BOINC pausing
+					// kernel profile to limit ocl queue to less than .1 sec
 					sclFinish(hardware);
 					clock_gettime(CLOCK_MONOTONIC, &petime);
 					proftime = diff(pstime,petime);
