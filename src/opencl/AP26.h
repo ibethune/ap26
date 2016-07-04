@@ -4,8 +4,8 @@
 	Bryan Little Jun 30 2016
 	+ Using ~1.1GB VRAM on GPU
 	+ Using ~415MB RAM on host
-	+ This is code tuned for OpenCL devices.
-	+ Limit kernel queue depth to .1 sec to improve screen refresh
+	+ This is code tuned for Nvidia and AMD GPU OpenCL devices.
+	+ Limit kernel queue depth to .2 sec to improve screen refresh
 
 */
 
@@ -275,14 +275,14 @@ void SearchAP26(int K, int startSHIFT)
 
 
 				if(profile){
-					// kernel profile to limit ocl queue to less than .1 sec
+					// kernel profile to limit ocl queue to less than .2 sec
 					sclFinish(hardware);
 					clock_gettime(CLOCK_MONOTONIC, &petime);
 					proftime = diff(pstime,petime);
 					fprintf(stderr, "kernel profile (sec): %d, (nanoseconds): %d\n", proftime.tv_sec, proftime.tv_nsec);
 					int64_t totalnano = (proftime.tv_sec * 1000000000) + proftime.tv_nsec;
-					if(totalnano < 100000000){
-						profileq = 100000000 / totalnano;
+					if(totalnano < 200000000){
+						profileq = 200000000 / totalnano;
 					}
 					else{
 						profileq = 1;
