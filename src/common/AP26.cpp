@@ -475,8 +475,9 @@ int main(int argc, char *argv[])
 
 	/* Get search parameters from command line */
 #if defined(AP26_SSE2) || defined (AP26_AVX2)
+# ifdef AP26_BOINC
 	boinc_init();
-
+# endif
 	if (argc == 4){
 		sscanf(argv[1],"%d",&KMIN);
 		sscanf(argv[2],"%d",&KMAX);
@@ -489,12 +490,13 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef AP26_OPENCL
+# ifdef AP26_BOINC
 	// raise thread priority
 	BOINC_OPTIONS options;
 	boinc_options_defaults(options);
 	options.normal_thread_priority = true; 
 	boinc_init_options(&options);
-
+# endif
 	/* Get search parameters from command line */
         if (argc == 6){
                 sscanf(argv[1],"%d",&KMIN);
