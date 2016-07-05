@@ -545,7 +545,7 @@ sclHard* sclGetAllHardware( int* found ) {
 	else {
 		
 		for ( i = 0; i < (int)nPlatforms; ++i ) {
-			err = clGetDeviceIDs( platforms[i], CL_DEVICE_TYPE_ALL, 16, devices, &nDevices );
+			err = clGetDeviceIDs( platforms[i], CL_DEVICE_TYPE_GPU, 16, devices, &nDevices );
 			if ( nDevices == 0 ) {
 				printf("\nNo OpenCL enabled device found.");
 				if ( err != CL_SUCCESS ) {

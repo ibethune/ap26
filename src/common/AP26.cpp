@@ -462,12 +462,18 @@ int main(int argc, char *argv[])
         cl_int err;
 #endif
 
-        printf("AP26 %s 10-shift search version %d.%d%s by Bryan Little and Iain Bethune\n",TARGET,MAJORV,MINORV,SUFFIXV);
-	printf("Compiled " __DATE__ " with GCC " __VERSION__ "\n");
+        // Print out cmd line for diagnostics
+        fprintf(stderr, "Command line: ");
+        for (int i = 0; i < argc; i++)
+        fprintf(stderr, "%s ", argv[i]);
+        fprintf(stderr, "\n\n");
 
 #ifdef AP26_BOINC
-	fprintf(stderr, "AP26 %s 10-shift search version %d.%d%s by Bryan Little\n",TARGET,MAJORV,MINORV,SUFFIXV);
+	fprintf(stderr, "AP26 %s 10-shift search version %d.%d%s by Bryan Little and Iain Bethune\n",TARGET,MAJORV,MINORV,SUFFIXV);
 	fprintf(stderr, "Compiled " __DATE__ " with GCC " __VERSION__ "\n");
+#else
+        printf("AP26 %s 10-shift search version %d.%d%s by Bryan Little and Iain Bethune\n",TARGET,MAJORV,MINORV,SUFFIXV);
+        printf("Compiled " __DATE__ " with GCC " __VERSION__ "\n");
 #endif
 
         /* Check FPU mode and change it to extended precision if necessary. */
