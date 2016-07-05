@@ -179,6 +179,42 @@ static FILE *my_fopen(const char *filename, const char *mode)
 // a bit less than 32bit signed int max
 #define MAXINTV 2000000000
 
+// Functions to control trickles to the BOINC server
+// Adapted from genefer (http://www.assembla.com/spaces/genefer)
+
+#define TRICKLE_PERIOD 86400.0 // Once per day
+
+void handle_trickle_up(time_t *last_trickle)
+{
+    if (boinc_is_standalone()) return; // Only send trickles if we have a real BOINC server to talk to
+
+    time_t now = time(NULL);
+
+    if (difftime(now, *last_trickle) > TRICKLE_PERIOD)
+    {
+        *last_trickle = now;
+
+        double progress = boinc_get_fraction_done();
+        double cpu;
+        boinc_wu_cpu_time(cpu);
+        APP_INIT_DATA init_data;
+        boinc_get_init_data(init_data);
+        double run = boinc_elapsed_time() + init_data.starting_elapsed_time;
+
+        char msg[512];
+        sprintf(msg, "<trickle_up>\n"
+                    "   <progress>%f</progress>\n"
+                    "   <cputime>%f</cputime>\n"
+                    "   <runtime>%f</runtime>\n"
+                    "</trickle_up>\n",
+                     progress, cpu, run  );
+        char variety[64];
+        sprintf(variety, "ap26_progress");
+        boinc_send_trickle_up(variety, msg);
+    }
+
+}
+
 // Bryan Little 6-9-2016
 // BOINC result hash calculation, write to solution file, and close.
 // The hash function is a 16 char hexadecimal string used to compare results found by different computers in a BOINC quorum.
@@ -248,7 +284,7 @@ static void write_hash()
 }
 
 
-static void write_state(int KMIN, int KMAX, int SHIFT, int K)
+static void write_state(int KMIN, int KMAX, int SHIFT, int K, time_t last_trickle)
 {
 	FILE *out;
 
@@ -257,7 +293,7 @@ static void write_state(int KMIN, int KMAX, int SHIFT, int K)
 		exit(EXIT_FAILURE);
 	}
 
-	if (fprintf(out,"%d %d %d %d %d\n",KMIN,KMAX,SHIFT,K,result_hash) < 0){
+	if (fprintf(out,"%d %d %d %d %d %lf\n",KMIN,KMAX,SHIFT,K,result_hash, (double)last_trickle) < 0){
 		fprintf(stderr,"Cannot write to %s !!!\n",STATE_FILENAME);
 		exit(EXIT_FAILURE);
 	}
@@ -267,15 +303,16 @@ static void write_state(int KMIN, int KMAX, int SHIFT, int K)
 
 /* Return 1 only if a valid checkpoint can be read.
  */
-static int read_state(int KMIN, int KMAX, int SHIFT, int *K)
+static int read_state(int KMIN, int KMAX, int SHIFT, int *K, time_t *last_trickle)
 {
 	FILE *in;
 	int tmp1, tmp2, tmp3, tmp4;
+        double tmp5;
 
 	if ((in = my_fopen(STATE_FILENAME,"r")) == NULL)
 		return 0;
 
-	if (fscanf(in,"%d %d %d %d %d\n",&tmp1,&tmp2,&tmp3,K,&tmp4) != 5){
+	if (fscanf(in,"%d %d %d %d %d %lf\n",&tmp1,&tmp2,&tmp3,K,&tmp4,&tmp5) != 6){
 		fprintf(stderr,"Cannot parse %s !!!\n",STATE_FILENAME);
 		exit(EXIT_FAILURE);
 	}
@@ -285,6 +322,7 @@ static int read_state(int KMIN, int KMAX, int SHIFT, int *K)
 	/* Check that KMIN KMAX SHIFT all match */
 	if (tmp1==KMIN && tmp2==KMAX && tmp3==SHIFT){
 		result_hash = tmp4;
+                *last_trickle = (time_t)tmp5;
 		return 1;
 	}
 
@@ -411,7 +449,7 @@ void ReportSolution(int AP_Length,int difference,int64_t First_Term)
 /* Checkpoint 
    If force is nonzero then don't ask BOINC for permission.
 */
-void checkpoint(int SHIFT, int K, int force)
+void checkpoint(int SHIFT, int K, int force, time_t *last_trickle)
 {
 	double d;
 
@@ -427,7 +465,7 @@ void checkpoint(int SHIFT, int K, int force)
 		if (results_file != NULL)
 			fflush(results_file);
 
-		write_state(KMIN,KMAX,SHIFT,K);
+		write_state(KMIN,KMAX,SHIFT,K,*last_trickle);
 
 		/* It is OK to print this progress message now since other buffers are being flushed now anyway */
 		printf("Checkpoint: KMIN=%d KMAX=%d SHIFT=%d K=%d (%.2f%%)\n",KMIN,KMAX,SHIFT,K,d*100.0);
@@ -438,6 +476,7 @@ void checkpoint(int SHIFT, int K, int force)
 	}
 
 	boinc_fraction_done(d);
+        handle_trickle_up(last_trickle);
 #endif
 }
 
@@ -481,9 +520,6 @@ int main(int argc, char *argv[])
 
 	/* Get search parameters from command line */
 #if defined(AP26_SSE2) || defined (AP26_AVX2)
-# ifdef AP26_BOINC
-	boinc_init();
-# endif
 	if (argc == 4){
 		sscanf(argv[1],"%d",&KMIN);
 		sscanf(argv[2],"%d",&KMAX);
@@ -496,13 +532,6 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef AP26_OPENCL
-# ifdef AP26_BOINC
-	// raise thread priority
-	BOINC_OPTIONS options;
-	boinc_options_defaults(options);
-	options.normal_thread_priority = true; 
-	boinc_init_options(&options);
-# endif
 	/* Get search parameters from command line */
         if (argc == 6){
                 sscanf(argv[1],"%d",&KMIN);
@@ -518,8 +547,21 @@ int main(int argc, char *argv[])
 #endif
         printf("Search parameters are KMIN: %d KMAX: %d SHIFT: %d\n", KMIN, KMAX, SHIFT);
 
+        // Initialise BOINC
+#ifdef AP26_BOINC
+        BOINC_OPTIONS options;
+        boinc_options_defaults(options);
+#ifdef AP26_OPENCL
+        options.normal_thread_priority = true;    // Raise thread prio to keep GPU fed
+#endif
+        options.handle_trickle_ups = true;        // We may periodically report status
+        boinc_init_options(&options);
+# endif
+
+        time_t last_trickle;
+
 	/* Resume from checkpoint if there is one */
-	if (read_state(KMIN,KMAX,SHIFT,&K)){
+	if (read_state(KMIN,KMAX,SHIFT,&K,&last_trickle)){
 		printf("Resuming search from the checkpoint in %s.\n",STATE_FILENAME);
 	}
 	else{
@@ -527,6 +569,7 @@ int main(int argc, char *argv[])
 		K = KMIN;
 		// zero result hash for BOINC
 		result_hash = 0;
+                last_trickle = time(NULL); // Start trickle timer
 	}
 
 #ifdef AP26_OPENCL
@@ -666,7 +709,7 @@ int main(int argc, char *argv[])
 	for (; K <= KMAX; ++K){
 		if (will_search(K)){
 
-			checkpoint(SHIFT,K,0);
+			checkpoint(SHIFT,K,0,&last_trickle);
 
                         printf("Starting search... reporting APs of size %d and larger\n\n", MINIMUM_AP_LENGTH_TO_REPORT);
                         SearchAP26(K,SHIFT);
@@ -680,7 +723,7 @@ int main(int argc, char *argv[])
 	boinc_begin_critical_section();
 #endif
 	/* Force Final checkpoint */
-	checkpoint(SHIFT,K,1);
+	checkpoint(SHIFT,K,1,&last_trickle);
 
 	/* Write BOINC hash to file */
 	write_hash();
