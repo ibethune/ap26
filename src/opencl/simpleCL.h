@@ -114,8 +114,6 @@ void 			sclSetKernelArg( sclSoft software, int argnum, size_t typeSize, void *ar
 
 /* ####### Hardware init and selection #################### */
 
-sclHard 		sclGetGPUHardware( int nDevice, int* found );
-sclHard 		sclGetCPUHardware( int nDevice, int* found );
 sclHard*		sclGetAllHardware( int* found );
 
 /* ######################################################## */
