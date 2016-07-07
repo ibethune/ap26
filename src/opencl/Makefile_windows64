@@ -4,7 +4,7 @@ LD = $(CC)
 .SUFFIXES:
 .SUFFIXES: .o .c .h .cl .cpp
 
-APP = ap26_opencl_windows64
+APP = ap26_opencl_windows64.exe
 
 SRC = ../common/AP26.cpp simpleCL.c ../common/CONST.H ../common/PrimeQ_x86.h simpleCL.h kernels/checkn.cl kernels/setok.cl kernels/clearok.cl kernels/clearsol.cl kernels/offset.cl kernels/setupokok.cl kernels/sieve.cl kernels/sieve_nv.cl
 KERNEL_HEADERS = kernels/checkn.h kernels/setok.h kernels/clearok.h kernels/clearsol.h kernels/offset.h kernels/setupokok.h kernels/sieve.h kernels/sieve_nv.h
