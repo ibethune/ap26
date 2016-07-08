@@ -29,13 +29,13 @@
 
 
 
-void SearchAP26(int K, int startSHIFT)
+void SearchAP26(int K, int startSHIFT, int ITER)
 { 
 	int64_t n, n43, n47, n53, n59;
 	int i43, i47, i53, i59;
 	int i3, i5, i31, i37, i41;
 	int SHIFT;
-
+	int iter=ITER;
 	int64_t STEP;
 	int64_t n0;
 	int64_t sito;
@@ -72,7 +72,7 @@ void SearchAP26(int K, int startSHIFT)
 		
 
 	// 10 shift
-	for(SHIFT=startSHIFT; SHIFT<(startSHIFT+640); SHIFT+=64){
+	for(SHIFT=startSHIFT+(iter*64); SHIFT<(startSHIFT+640); SHIFT+=64){
 
 		// init OKOK arrays    
 		setupoks(SHIFT,STEP);
@@ -283,6 +283,8 @@ void SearchAP26(int K, int startSHIFT)
 		}
 
 		printf("Computation of K: %d SHIFT: %d complete\n", K, SHIFT);
+		iter++;
+		checkpoint(startSHIFT,K,0,iter);
 
 	}
 

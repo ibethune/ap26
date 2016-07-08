@@ -113,6 +113,7 @@
 /* Global variables */
 static int KMIN, KMAX, K_DONE, K_COUNT;
 int result_hash;
+time_t last_trickle;
 
 #ifdef AP26_OPENCL
 
@@ -184,15 +185,15 @@ static FILE *my_fopen(const char *filename, const char *mode)
 
 #define TRICKLE_PERIOD 86400.0 // Once per day
 
-void handle_trickle_up(time_t *last_trickle)
+void handle_trickle_up()
 {
     if (boinc_is_standalone()) return; // Only send trickles if we have a real BOINC server to talk to
 
     time_t now = time(NULL);
 
-    if (difftime(now, *last_trickle) > TRICKLE_PERIOD)
+    if (difftime(now, last_trickle) > TRICKLE_PERIOD)
     {
-        *last_trickle = now;
+        last_trickle = now;
 
         double progress = boinc_get_fraction_done();
         double cpu;
@@ -284,7 +285,7 @@ static void write_hash()
 }
 
 
-static void write_state(int KMIN, int KMAX, int SHIFT, int K, time_t last_trickle)
+static void write_state(int KMIN, int KMAX, int SHIFT, int K, int ITER)
 {
 	FILE *out;
 
@@ -293,7 +294,7 @@ static void write_state(int KMIN, int KMAX, int SHIFT, int K, time_t last_trickl
 		exit(EXIT_FAILURE);
 	}
 
-	if (fprintf(out,"%d %d %d %d %d %lf\n",KMIN,KMAX,SHIFT,K,result_hash, (double)last_trickle) < 0){
+	if (fprintf(out,"%d %d %d %d %d %d %lf\n",KMIN,KMAX,SHIFT,K,ITER,result_hash, (double)last_trickle) < 0){
 		fprintf(stderr,"Cannot write to %s !!!\n",STATE_FILENAME);
 		exit(EXIT_FAILURE);
 	}
@@ -303,7 +304,7 @@ static void write_state(int KMIN, int KMAX, int SHIFT, int K, time_t last_trickl
 
 /* Return 1 only if a valid checkpoint can be read.
  */
-static int read_state(int KMIN, int KMAX, int SHIFT, int *K, time_t *last_trickle)
+static int read_state(int KMIN, int KMAX, int SHIFT, int *K, int *ITER)
 {
 	FILE *in;
 	int tmp1, tmp2, tmp3, tmp4;
@@ -312,7 +313,7 @@ static int read_state(int KMIN, int KMAX, int SHIFT, int *K, time_t *last_trickl
 	if ((in = my_fopen(STATE_FILENAME,"r")) == NULL)
 		return 0;
 
-	if (fscanf(in,"%d %d %d %d %d %lf\n",&tmp1,&tmp2,&tmp3,K,&tmp4,&tmp5) != 6){
+	if (fscanf(in,"%d %d %d %d %d %d %lf\n",&tmp1,&tmp2,&tmp3,K,ITER,&tmp4,&tmp5) != 7){
 		fprintf(stderr,"Cannot parse %s !!!\n",STATE_FILENAME);
 		exit(EXIT_FAILURE);
 	}
@@ -322,7 +323,7 @@ static int read_state(int KMIN, int KMAX, int SHIFT, int *K, time_t *last_trickl
 	/* Check that KMIN KMAX SHIFT all match */
 	if (tmp1==KMIN && tmp2==KMAX && tmp3==SHIFT){
 		result_hash = tmp4;
-                *last_trickle = (time_t)tmp5;
+                last_trickle = (time_t)tmp5;
 		return 1;
 	}
 
@@ -449,14 +450,16 @@ void ReportSolution(int AP_Length,int difference,int64_t First_Term)
 /* Checkpoint 
    If force is nonzero then don't ask BOINC for permission.
 */
-void checkpoint(int SHIFT, int K, int force, time_t *last_trickle)
+void checkpoint(int SHIFT, int K, int force, int ITER)
 {
 	double d;
 
 	if (K_COUNT > 0)
-		d = (double)K_DONE/K_COUNT;
+		d = (double)(K_DONE*10+ITER)/(K_COUNT*10);
 	else
 		d = 1.0;
+
+printf("progress: %lf\n",d);
 
 #ifdef AP26_BOINC
 	if (force || boinc_time_to_checkpoint()){
@@ -465,9 +468,8 @@ void checkpoint(int SHIFT, int K, int force, time_t *last_trickle)
 		if (results_file != NULL)
 			fflush(results_file);
 
-		write_state(KMIN,KMAX,SHIFT,K,*last_trickle);
+		write_state(KMIN,KMAX,SHIFT,K,ITER);
 
-		/* It is OK to print this progress message now since other buffers are being flushed now anyway */
 		printf("Checkpoint: KMIN=%d KMAX=%d SHIFT=%d K=%d (%.2f%%)\n",KMIN,KMAX,SHIFT,K,d*100.0);
 
 #ifdef AP26_BOINC
@@ -476,7 +478,7 @@ void checkpoint(int SHIFT, int K, int force, time_t *last_trickle)
 	}
 
 	boinc_fraction_done(d);
-        handle_trickle_up(last_trickle);
+        handle_trickle_up();
 #endif
 }
 
@@ -493,7 +495,7 @@ static int will_search(int K)
 
 int main(int argc, char *argv[])
 {
-	int i, K, SHIFT;
+	int i, K, SHIFT, ITER;
 
 #ifdef AP26_OPENCL
         int found=0;
@@ -501,9 +503,20 @@ int main(int argc, char *argv[])
         cl_int err;
 #endif
 
+        // Initialize BOINC
+#ifdef AP26_BOINC
+        BOINC_OPTIONS options;
+        boinc_options_defaults(options);
+# ifdef AP26_OPENCL
+        options.normal_thread_priority = true;    // Raise thread prio to keep GPU fed
+# endif
+        options.handle_trickle_ups = true;        // We may periodically report status
+        boinc_init_options(&options);
+#endif
+
         // Print out cmd line for diagnostics
         fprintf(stderr, "Command line: ");
-        for (int i = 0; i < argc; i++)
+        for (i = 0; i < argc; i++)
         fprintf(stderr, "%s ", argv[i]);
         fprintf(stderr, "\n\n");
 
@@ -547,28 +560,15 @@ int main(int argc, char *argv[])
 #endif
         printf("Search parameters are KMIN: %d KMAX: %d SHIFT: %d\n", KMIN, KMAX, SHIFT);
 
-        // Initialise BOINC
-#ifdef AP26_BOINC
-        BOINC_OPTIONS options;
-        boinc_options_defaults(options);
-#ifdef AP26_OPENCL
-        options.normal_thread_priority = true;    // Raise thread prio to keep GPU fed
-#endif
-        options.handle_trickle_ups = true;        // We may periodically report status
-        boinc_init_options(&options);
-# endif
-
-        time_t last_trickle;
-
 	/* Resume from checkpoint if there is one */
-	if (read_state(KMIN,KMAX,SHIFT,&K,&last_trickle)){
+	if (read_state(KMIN,KMAX,SHIFT,&K,&ITER)){
 		printf("Resuming search from the checkpoint in %s.\n",STATE_FILENAME);
 	}
 	else{
 		printf("Beginning a new search with parameters from the command line\n");
 		K = KMIN;
-		// zero result hash for BOINC
-		result_hash = 0;
+		ITER = 0;
+		result_hash = 0; // zero result hash for BOINC
                 last_trickle = time(NULL); // Start trickle timer
 	}
 
@@ -576,6 +576,11 @@ int main(int argc, char *argv[])
 
         // OpenCL Init
         allhardware = sclGetAllHardware(&found);
+	if(found == 0){
+		printf("Error: no OpenCL GPUs found.\n");
+		fprintf(stderr, "Error: no OpenCL GPUs found.\n");
+                exit(EXIT_FAILURE);
+	}
 
         hardware = allhardware[GPUNUM];
         printf("\n using device %d\n",GPUNUM);
@@ -709,11 +714,13 @@ int main(int argc, char *argv[])
 	for (; K <= KMAX; ++K){
 		if (will_search(K)){
 
-			checkpoint(SHIFT,K,0,&last_trickle);
+			checkpoint(SHIFT,K,0,ITER);
 
-                        printf("Starting search... reporting APs of size %d and larger\n\n", MINIMUM_AP_LENGTH_TO_REPORT);
-                        SearchAP26(K,SHIFT);
+                        printf("Starting search... reporting APs of size %d and larger\n", MINIMUM_AP_LENGTH_TO_REPORT);
 
+                        SearchAP26(K,SHIFT,ITER);
+
+			ITER = 0;
 		 	K_DONE++;
 		}
 	}
@@ -723,7 +730,7 @@ int main(int argc, char *argv[])
 	boinc_begin_critical_section();
 #endif
 	/* Force Final checkpoint */
-	checkpoint(SHIFT,K,1,&last_trickle);
+	checkpoint(SHIFT,K,1,ITER);
 
 	/* Write BOINC hash to file */
 	write_hash();

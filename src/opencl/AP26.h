@@ -76,7 +76,7 @@ struct timespec diff(struct timespec start, struct timespec end)
 }
 
 
-void SearchAP26(int K, int startSHIFT)
+void SearchAP26(int K, int startSHIFT, int ITER)
 { 
 
 	int64_t STEP;
@@ -89,6 +89,7 @@ void SearchAP26(int K, int startSHIFT)
         size_t local_size[2];
 	int profile=1;
 	int profileq;
+	int iter=ITER;
 	struct timespec proftime, pstime, petime;
 
 	time_t total_start_time, total_finish_time;
@@ -171,7 +172,7 @@ void SearchAP26(int K, int startSHIFT)
 
 	int SHIFT;
 
-	for(SHIFT=startSHIFT; SHIFT<(startSHIFT+640); SHIFT+=64){
+	for(SHIFT=startSHIFT+(iter*64); SHIFT<(startSHIFT+640); SHIFT+=64){
 
 		time_t start_time, finish_time;
 		time (&start_time);
@@ -313,7 +314,6 @@ void SearchAP26(int K, int startSHIFT)
 		sclRead(hardware, sol * sizeof(int64_t), sol_val_d, sol_val_h);
 
 
-
 		int e=0;
 		while(sol_k_h[e] != 0){
 			ReportSolution(sol_k_h[e],K,sol_val_h[e]);
@@ -336,6 +336,9 @@ void SearchAP26(int K, int startSHIFT)
 
 		time(&finish_time);
 		printf("GPU time was %d seconds\n", (int)finish_time - (int)start_time);
+
+		iter++;
+		checkpoint(startSHIFT,K,0,iter);
 	}
 
 	time(&total_finish_time);
