@@ -469,7 +469,7 @@ void checkpoint(int SHIFT, int K, int force, int ITER)
 
 		write_state(KMIN,KMAX,SHIFT,K,ITER);
 
-		printf("Checkpoint: KMIN=%d KMAX=%d SHIFT=%d K=%d (%.2f%%)\n",KMIN,KMAX,SHIFT,K,d*100.0);
+		printf("Checkpoint: KMIN:%d KMAX:%d SHIFT:%d K:%d ITER:%d (%.2f%%)\n",KMIN,KMAX,SHIFT,K,ITER,d*100.0);
 /*
 #ifdef AP26_BOINC
 		if (!force)
@@ -558,11 +558,12 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
         }
 #endif
-        printf("Search parameters are KMIN: %d KMAX: %d SHIFT: %d\n", KMIN, KMAX, SHIFT);
+//        printf("Search parameters are KMIN: %d KMAX: %d SHIFT: %d\n", KMIN, KMAX, SHIFT);
 
 	/* Resume from checkpoint if there is one */
 	if (read_state(KMIN,KMAX,SHIFT,&K,&ITER)){
-		printf("Resuming search from the checkpoint in %s.\n",STATE_FILENAME);
+		printf("Resuming search from checkpoint.\n");
+		fprintf(stderr,"Resuming from checkpoint. K: %d ITER: %d\n",K,ITER);
 	}
 	else{
 		printf("Beginning a new search with parameters from the command line\n");
