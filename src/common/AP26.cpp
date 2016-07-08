@@ -459,18 +459,17 @@ void checkpoint(int SHIFT, int K, int force, int ITER)
 	else
 		d = 1.0;
 
-/*
 #ifdef AP26_BOINC
 	if (force || boinc_time_to_checkpoint()){
 #endif
-*/
+
 		if (results_file != NULL)
 			fflush(results_file);
 
 		write_state(KMIN,KMAX,SHIFT,K,ITER);
 
 		printf("Checkpoint: KMIN:%d KMAX:%d SHIFT:%d K:%d ITER:%d (%.2f%%)\n",KMIN,KMAX,SHIFT,K,ITER,d*100.0);
-/*
+
 #ifdef AP26_BOINC
 		if (!force)
 			boinc_checkpoint_completed();
@@ -479,7 +478,7 @@ void checkpoint(int SHIFT, int K, int force, int ITER)
 	boinc_fraction_done(d);
         handle_trickle_up();
 #endif
-*/
+
 }
 
 /* Returns 1 iff K will be searched.
