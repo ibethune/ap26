@@ -40,6 +40,14 @@
 # include <immintrin.h>
 #endif
 
+#ifdef AP26_BOINC
+# include "boinc_api.h"
+# include "filesys.h"
+# ifdef AP26_OPENCL
+#  include "boinc_opencl.h"
+# endif
+#endif
+
 #ifdef AP26_OPENCL
 # include "simpleCL.h"
 // ocl kernels converted with xxd
@@ -64,13 +72,7 @@
 # define GENERIC 0
 #endif
 
-#ifdef AP26_BOINC
-# include "boinc_api.h"
-# include "filesys.h"
-# ifdef AP26_OPENCL
-#  include "boinc_opencl.h"
-# endif
-#endif
+
 
 #ifndef EXIT_SUCCESS
 # define EXIT_SUCCESS 0
