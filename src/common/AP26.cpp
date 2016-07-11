@@ -492,7 +492,7 @@ static int will_search(int K)
 
 int main(int argc, char *argv[])
 {
-	int i, K, SHIFT, ITER;
+	int i, K, SHIFT, ITER, GPU;
 
         // Initialize BOINC
 #ifdef AP26_BOINC
