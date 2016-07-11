@@ -119,8 +119,6 @@ time_t last_trickle;
 
 sclHard hardware;
 
-sclHard *allhardware;
-
 sclSoft clearok;
 sclSoft clearsol;
 sclSoft offset;
@@ -496,12 +494,6 @@ int main(int argc, char *argv[])
 {
 	int i, K, SHIFT, ITER;
 
-#ifdef AP26_OPENCL
-        int found=0;
-        int GPUNUM, GPU;
-        cl_int err;
-#endif
-
         // Initialize BOINC
 #ifdef AP26_BOINC
         BOINC_OPTIONS options;
@@ -513,11 +505,6 @@ int main(int argc, char *argv[])
         boinc_init_options(&options);
 #endif
 
-        // Print out cmd line for diagnostics
-        fprintf(stderr, "Command line: ");
-        for (i = 0; i < argc; i++)
-        fprintf(stderr, "%s ", argv[i]);
-        fprintf(stderr, "\n\n");
 
 #ifdef AP26_BOINC
 	fprintf(stderr, "AP26 %s 10-shift search version %d.%d%s by Bryan Little and Iain Bethune\n",TARGET,MAJORV,MINORV,SUFFIXV);
@@ -531,8 +518,8 @@ int main(int argc, char *argv[])
 	check_fpu_mode();
 
 	/* Get search parameters from command line */
-#if defined(AP26_SSE2) || defined (AP26_AVX2)
-	if (argc == 4){
+	// ignore argc 5 and 6 (depreciated --device #)
+	if (argc == 4 || argc == 6){
 		sscanf(argv[1],"%d",&KMIN);
 		sscanf(argv[2],"%d",&KMAX);
 		sscanf(argv[3],"%d",&SHIFT);
@@ -541,23 +528,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr,"Usage: %s [KMIN KMAX SHIFT]\n",argv[0]);
 		exit(EXIT_FAILURE);
 	}
-#endif
 
-#ifdef AP26_OPENCL
-	/* Get search parameters from command line */
-        if (argc == 6){
-                sscanf(argv[1],"%d",&KMIN);
-                sscanf(argv[2],"%d",&KMAX);
-                sscanf(argv[3],"%d",&SHIFT);
-                // argv[4] is --device
-                sscanf(argv[5],"%d",&GPUNUM);
-        }
-        else{
-                printf("Usage: %s [KMIN KMAX SHIFT --device N] where N is the GPU to use.\n",argv[0]);
-                exit(EXIT_FAILURE);
-        }
-#endif
-//        printf("Search parameters are KMIN: %d KMAX: %d SHIFT: %d\n", KMIN, KMAX, SHIFT);
 
 	/* Resume from checkpoint if there is one */
 	if (read_state(KMIN,KMAX,SHIFT,&K,&ITER)){
@@ -574,26 +545,13 @@ int main(int argc, char *argv[])
 
 #ifdef AP26_OPENCL
 
-        // OpenCL Init
-        allhardware = sclGetAllHardware(&found);
-	if(found == 0){
-		printf("Error: no OpenCL GPUs found.\n");
-		fprintf(stderr, "Error: no OpenCL GPUs found.\n");
-                exit(EXIT_FAILURE);
-	}
-
-        hardware = allhardware[GPUNUM];
-        printf("\n using device %d\n",GPUNUM);
-
 
 # ifdef AP26_BOINC
-        int64_t gmem = (int64_t)_sclGetMaxGlobalMemSize(hardware.device);
-        int64_t maxalloc = (int64_t)_sclGetMaxMemAllocSize(hardware.device);
-        fprintf(stderr, "GPU global memory available: %lld\n", gmem);
-        fprintf(stderr, "GPU max memory allocation:   %lld\n", maxalloc);
+        hardware = sclGetBOINCHardware( argc, argv );
 # endif
 
         // Check GPU vendor
+	cl_int err;
         char vend[1024];
         char vendnv[1024] = "NVIDIA Corporation";
         err = clGetDeviceInfo(hardware.device, CL_DEVICE_VENDOR, sizeof(char)*1024, vend, NULL);
@@ -770,7 +728,7 @@ int main(int argc, char *argv[])
         sclReleaseClSoft(sieve);
 
         sclReleaseClHard(hardware);
-        sclReleaseAllHardware(allhardware, found);
+
 #endif
 
 	/* Done */

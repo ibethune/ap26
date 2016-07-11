@@ -303,33 +303,12 @@ void sclReleaseClSoft( sclSoft soft ) {
 	clReleaseProgram( soft.program );
 }
 
+
 void sclReleaseClHard( sclHard hardware ){
 	clReleaseCommandQueue( hardware.queue );
 	clReleaseContext( hardware.context );
 }
 
-void sclRetainClHard( sclHard hardware ) {
-	clRetainCommandQueue( hardware.queue );
-	clRetainContext( hardware.context );
-}
-
-void sclReleaseAllHardware ( sclHard* hardList, int found ) {
-	int i;	
-
-	for ( i = 0; i < found; ++i ) {
-		sclReleaseClHard( hardList[i] );
-	}
- 
-}
-
-void sclRetainAllHardware ( sclHard* hardList, int found ) {
-	int i;	
-
-	for ( i = 0; i < found; ++i ) {
-		sclRetainClHard( hardList[i] );
-	}
- 
-}
 
 void sclReleaseMemObject( cl_mem object ) {
 	cl_int err;
@@ -342,130 +321,6 @@ void sclReleaseMemObject( cl_mem object ) {
 
 }
 
-void sclPrintDeviceNamePlatforms( sclHard* hardList, int found ) {
-	int i;
-	cl_char deviceName[1024];
-	cl_char platformVendor[1024];
-	cl_char platformName[1024];
-
-	for ( i = 0; i < found; ++i ) {
-		clGetPlatformInfo( hardList[i].platform, CL_PLATFORM_NAME, sizeof(cl_char)*1024, platformName, NULL );	
-		clGetPlatformInfo( hardList[i].platform, CL_PLATFORM_VENDOR, sizeof(cl_char)*1024, platformVendor, NULL );
-		clGetDeviceInfo( hardList[i].device, CL_DEVICE_NAME, sizeof(cl_char)*1024, deviceName, NULL );
-		fprintf( stdout, "\n Device %d \n Platform name: %s \n Vendor: %s \n Device name: %s", 
-				hardList[i].devNum, platformName, platformVendor, deviceName );	
-	}
-
-}
-
-void sclPrintHardwareStatus( sclHard hardware ) {
-
-	cl_int err;
-	char platform[100];
-	cl_bool deviceAV;
-
-	err = clGetPlatformInfo( hardware.platform,
-			CL_PLATFORM_NAME,
-			sizeof(char)*100,
-			platform,
-			NULL );
-	if ( err == CL_SUCCESS ) { fprintf( stdout, "\nPlatform object alive" ); }
-	else { sclPrintErrorFlags( err ); }
-	
-	err = clGetDeviceInfo( hardware.device,
-			CL_DEVICE_AVAILABLE,
-			sizeof(cl_bool),
-			(void*)(&deviceAV),
-			NULL );
-	if ( err == CL_SUCCESS && deviceAV ) {
-		fprintf( stdout, "\nDevice object alive and device available." );
-	}
-	else if ( err == CL_SUCCESS ) {
-		fprintf( stdout, "\nDevice object alive and device NOT available.");
-	}
-	else {
-		fprintf( stdout, "\nDevice object not alive.");
-	} 
-
-}
-
-void _sclCreateQueues( sclHard* hardList, int found ) {
-
-	int i;
-	cl_int err;
-
-	for ( i = 0; i < found; ++i ) {
-		hardList[i].queue = clCreateCommandQueue( hardList[i].context, hardList[i].device,
-							 CL_QUEUE_PROFILING_ENABLE, &err );
-		if ( err != CL_SUCCESS ) {
-			fprintf( stdout, "\nError creating command queue %d", i );
-			sclPrintErrorFlags( err );
-		}
-	}
-
-}
-
-void _sclSmartCreateContexts( sclHard* hardList, int found ) {
-
-	cl_device_id deviceList[16];
-	cl_context context;
-	char var_queries1[1024];
-	char var_queries2[1024];
-	cl_int err;
-
-	ptsclHard groups[10][20];
-	int i, j, groupSet = 0;
-	int groupSizes[10];
-	int nGroups = 0;
-
-
-	for ( i = 0; i < found; ++i ) { /* Group generation */
-	
-		clGetPlatformInfo( hardList[i].platform, CL_PLATFORM_NAME, 1024, var_queries1, NULL );
-
-		if (  nGroups == 0 ) {
-			groups[0][0] = &(hardList[0]);
-			nGroups++;
-			groupSizes[0] = 1;
-		}
-		else {
-			groupSet=0;
-			for ( j = 0; j < nGroups; ++j ){
-				clGetPlatformInfo( groups[j][0]->platform, CL_PLATFORM_NAME, 1024, var_queries2, NULL );
-				if ( strcmp( var_queries1, var_queries2 ) == 0 &&
-						hardList[i].deviceType == groups[j][0]->deviceType &&
-						hardList[i].maxPointerSize == groups[j][0]->maxPointerSize ) {
-					groups[j][ groupSizes[j] ] = &(hardList[i]);
-					groupSizes[j]++;
-					groupSet = 1;	
-				}
-			}
-			if ( !groupSet ) {
-				groups[nGroups][0] = &(hardList[i]);
-				groupSizes[nGroups] = 1;
-				nGroups++;
-			}
-		}
-	}
-
-	for ( i = 0; i < nGroups; ++i ) { /* Context generation */
-	
-		fprintf( stdout, "\nGroup %d with %d devices", i+1, groupSizes[i] );	
-		for ( j = 0; j < groupSizes[i]; ++j ) {
-			deviceList[j] = groups[i][j]->device;	
-		}
-
-		context = clCreateContext( 0, groupSizes[i], deviceList, NULL, NULL, &err );
-		if ( err != CL_SUCCESS ) {
-			fprintf( stdout, "\nError creating context on device %d", i );
-			sclPrintErrorFlags( err );
-		}
-
-		for ( j = 0; j < groupSizes[i]; ++j ) {
-			groups[i][j]->context = context;
-		}
-	}
-}
 
 int _sclGetMaxComputeUnits( cl_device_id device ) {
 	
@@ -499,78 +354,65 @@ unsigned long int _sclGetMaxGlobalMemSize( cl_device_id device ){
 }
 
 
+sclHard sclGetBOINCHardware( int argc, char** argv ) {
 
-int _sclGetDeviceType( cl_device_id device ) {
-	
-	int out=2;
-	char var_queries[1024];
-
- 	clGetDeviceInfo( device, CL_DEVICE_TYPE, 1024, var_queries, NULL );
-	
-	if ( strcmp( var_queries, "CL_DEVICE_TYPE_GPU" ) == 0 ) {
-		out = 0;
-	}
-	else if ( strcmp( var_queries, "CL_DEVICE_TYPE_CPU" ) == 0 ) {
-		out = 1;
-	}
-
-	return out;
-
-}
+	sclHard hardware;
+	cl_platform_id platform = NULL;
+	cl_device_id device;
+	cl_context context;
+	cl_command_queue queue;
+	int retval = 0;
+	cl_int status = 0;
+	cl_char deviceName[1024];
+	cl_char platformVendor[1024];
+	cl_char platformName[1024];
+	int i;
 
 
-sclHard* sclGetAllHardware( int* found ) {
-
-	int i, j; 
-	cl_uint nPlatforms=0, nDevices=0;
-	char* platformName;
-	sclHard* hardList;
-	
-	*found=0;
-
-	cl_platform_id *GPUplatforms, *platforms;
-	cl_int err;
-	cl_device_id *devices;
-	
-	platforms = (cl_platform_id *)malloc( sizeof(cl_platform_id) * 8 );
-	GPUplatforms = (cl_platform_id *)malloc( sizeof(cl_platform_id) * 8 );
-	platformName = (char *)malloc( sizeof(char) * 30 );
-	devices = (cl_device_id *)malloc( sizeof(cl_device_id) * 16 );
-	hardList = (sclHard*)malloc( 16*sizeof(sclHard) );
-
-	err = clGetPlatformIDs( 8, platforms, &nPlatforms );
-	if ( nPlatforms == 0 ) {
-		printf("\nNo OpenCL platforms found.\n");
-	}
-	else {
-		
-		for ( i = 0; i < (int)nPlatforms; ++i ) {
-			err = clGetDeviceIDs( platforms[i], CL_DEVICE_TYPE_GPU, 16, devices, &nDevices );
-			if ( err != CL_SUCCESS && err != CL_DEVICE_NOT_FOUND) {
-				printf( "\nError clGetDeviceIDs" );
-				sclPrintErrorFlags( err );
-			}
-			if( (int)nDevices > 0 ){
-				for ( j = 0; j < (int)nDevices; ++j ) {
-				
-					hardList[ *found ].platform       = platforms[ i ];
-					hardList[ *found ].device         = devices[ j ];
-					hardList[ *found ].nComputeUnits  = _sclGetMaxComputeUnits( hardList[ *found ].device );
-					hardList[ *found ].maxPointerSize = _sclGetMaxMemAllocSize( hardList[ *found ].device );				
-					hardList[ *found ].deviceType     = _sclGetDeviceType( hardList[ *found ].device );
-					hardList[ *found ].devNum         = *found;
-					(*found)++;
-				}
-			}
-		}
-		_sclSmartCreateContexts( hardList, *found );
-		_sclCreateQueues( hardList, *found );
+	retval = boinc_get_opencl_ids(argc, argv, 0, &device, &platform);
+	if (retval) {
+		fprintf(stderr, "Error: boinc_get_opencl_ids() failed with error %d\n", retval );
+		exit(EXIT_FAILURE);
 	}
 
-	sclPrintDeviceNamePlatforms( hardList, *found );
-	sclRetainAllHardware( hardList, *found );
+	cl_context_properties cps[3] = { CL_CONTEXT_PLATFORM, (cl_context_properties)platform, 0 };
+
+	context = clCreateContext(cps, 1, &device, NULL, NULL, &status);
+	if (status != CL_SUCCESS) {
+        	fprintf(stderr, "Error: clCreateContext() returned %d\n", status);
+        	exit(EXIT_FAILURE); 
+   	}
+
+	queue = clCreateCommandQueue(context, device, 0, &status);
+	if(status != CL_SUCCESS) { 
+		fprintf(stderr, "Error: Creating Command Queue. (clCreateCommandQueue) returned %d\n", status );
+        	exit(EXIT_FAILURE);
+    	}
+			
+	hardware.platform = platform;
+	hardware.device = device;
+	hardware.queue = queue;
+	hardware.context = context;
+
+        // Print out cmd line for diagnostics
+        fprintf(stderr, "Command line: ");
+        for (i = 0; i < argc; i++)
+        	fprintf(stderr, "%s ", argv[i]);
+        fprintf(stderr, "\n");
+
+	clGetPlatformInfo( hardware.platform, CL_PLATFORM_NAME, sizeof(cl_char)*1024, platformName, NULL );	
+	clGetPlatformInfo( hardware.platform, CL_PLATFORM_VENDOR, sizeof(cl_char)*1024, platformVendor, NULL );
+	clGetDeviceInfo( hardware.device, CL_DEVICE_NAME, sizeof(cl_char)*1024, deviceName, NULL );
+	fprintf(stderr, "GPU Info:\n  Platform name: %s\n  Vendor: %s\n  Device name: %s\n", platformName, platformVendor, deviceName );
+        int64_t gmem = (int64_t)_sclGetMaxGlobalMemSize(hardware.device);
+        int64_t maxalloc = (int64_t)_sclGetMaxMemAllocSize(hardware.device);
+        fprintf(stderr, "  GPU RAM:        %lld\n", gmem);
+        fprintf(stderr, "  GPU max malloc: %lld\n", maxalloc);	
+
+	clRetainCommandQueue( hardware.queue );
+	clRetainContext( hardware.context );
 	
-	return hardList;
+	return hardware;
 
 }
 

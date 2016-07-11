@@ -46,10 +46,6 @@ typedef struct {
 	cl_context context;
 	cl_device_id device;
 	cl_command_queue queue;
-	int nComputeUnits;
-	unsigned long int maxPointerSize;
-	int deviceType; /* deviceType 0 = GPU | deviceType 1 = CPU | deviceType 2 = other */
-	int devNum;
 }sclHard;
 typedef sclHard* ptsclHard;
 typedef struct {
@@ -79,9 +75,6 @@ sclSoft 		sclGetCLSoftware( char* source, char* name, sclHard hardware, int opt 
 
 void 			sclReleaseClSoft( sclSoft soft );
 void 			sclReleaseClHard( sclHard hard );
-void 			sclRetainClHard( sclHard hardware );
-void 			sclReleaseAllHardware( sclHard* hardList, int found );
-void 			sclRetainAllHardware( sclHard* hardList, int found );
 void			sclReleaseMemObject( cl_mem object );
 
 /* ######################################################## */
@@ -89,8 +82,6 @@ void			sclReleaseMemObject( cl_mem object );
 /* ####### Debug functions ################################ */
 
 void 			sclPrintErrorFlags( cl_int flag );
-void 			sclPrintHardwareStatus( sclHard hardware );
-void 			sclPrintDeviceNamePlatforms( sclHard* hardList, int found );
 
 /* ######################################################## */
 
@@ -114,7 +105,7 @@ void 			sclSetKernelArg( sclSoft software, int argnum, size_t typeSize, void *ar
 
 /* ####### Hardware init and selection #################### */
 
-sclHard*		sclGetAllHardware( int* found );
+sclHard 		sclGetBOINCHardware( int argc, char** argv );
 
 /* ######################################################## */
 
@@ -133,9 +124,7 @@ char* 			_sclLoadProgramSource( const char *filename );
 int 			_sclGetMaxComputeUnits( cl_device_id device );
 unsigned long int 	_sclGetMaxMemAllocSize( cl_device_id device );
 unsigned long int 	_sclGetMaxGlobalMemSize( cl_device_id device );
-int 			_sclGetDeviceType( cl_device_id device );
-void 			_sclSmartCreateContexts( sclHard* hardList, int found );
-void 			_sclCreateQueues( sclHard* hardList, int found );
+
 
 /* ######################################################## */
 
