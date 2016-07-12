@@ -184,12 +184,6 @@ sclHard sclGetBOINCHardware( int argc, char** argv ) {
 	hardware.queue = queue;
 	hardware.context = context;
 
-        // Print out cmd line for diagnostics
-        fprintf(stderr, "Command line: ");
-        for (i = 0; i < argc; i++)
-        	fprintf(stderr, "%s ", argv[i]);
-        fprintf(stderr, "\n");
-
 	clGetPlatformInfo( hardware.platform, CL_PLATFORM_NAME, sizeof(cl_char)*1024, platformName, NULL );	
 	clGetPlatformInfo( hardware.platform, CL_PLATFORM_VENDOR, sizeof(cl_char)*1024, platformVendor, NULL );
 	clGetDeviceInfo( hardware.device, CL_DEVICE_NAME, sizeof(cl_char)*1024, deviceName, NULL );
@@ -581,6 +575,12 @@ int main(int argc, char *argv[])
         printf("AP26 %s 10-shift search version %d.%d%s by Bryan Little and Iain Bethune\n",TARGET,MAJORV,MINORV,SUFFIXV);
         printf("Compiled " __DATE__ " with GCC " __VERSION__ "\n");
 #endif
+
+        // Print out cmd line for diagnostics
+        fprintf(stderr, "Command line: ");
+        for (i = 0; i < argc; i++)
+        	fprintf(stderr, "%s ", argv[i]);
+        fprintf(stderr, "\n");
 
         /* Check FPU mode and change it to extended precision if necessary. */
 	check_fpu_mode();
