@@ -354,68 +354,6 @@ unsigned long int _sclGetMaxGlobalMemSize( cl_device_id device ){
 }
 
 
-sclHard sclGetBOINCHardware( int argc, char** argv ) {
-
-	sclHard hardware;
-	cl_platform_id platform = NULL;
-	cl_device_id device;
-	cl_context context;
-	cl_command_queue queue;
-	int retval = 0;
-	cl_int status = 0;
-	cl_char deviceName[1024];
-	cl_char platformVendor[1024];
-	cl_char platformName[1024];
-	int i;
-
-
-	retval = boinc_get_opencl_ids(argc, argv, 0, &device, &platform);
-	if (retval) {
-		fprintf(stderr, "Error: boinc_get_opencl_ids() failed with error %d\n", retval );
-		exit(EXIT_FAILURE);
-	}
-
-	cl_context_properties cps[3] = { CL_CONTEXT_PLATFORM, (cl_context_properties)platform, 0 };
-
-	context = clCreateContext(cps, 1, &device, NULL, NULL, &status);
-	if (status != CL_SUCCESS) {
-        	fprintf(stderr, "Error: clCreateContext() returned %d\n", status);
-        	exit(EXIT_FAILURE); 
-   	}
-
-	queue = clCreateCommandQueue(context, device, 0, &status);
-	if(status != CL_SUCCESS) { 
-		fprintf(stderr, "Error: Creating Command Queue. (clCreateCommandQueue) returned %d\n", status );
-        	exit(EXIT_FAILURE);
-    	}
-			
-	hardware.platform = platform;
-	hardware.device = device;
-	hardware.queue = queue;
-	hardware.context = context;
-
-        // Print out cmd line for diagnostics
-        fprintf(stderr, "Command line: ");
-        for (i = 0; i < argc; i++)
-        	fprintf(stderr, "%s ", argv[i]);
-        fprintf(stderr, "\n");
-
-	clGetPlatformInfo( hardware.platform, CL_PLATFORM_NAME, sizeof(cl_char)*1024, platformName, NULL );	
-	clGetPlatformInfo( hardware.platform, CL_PLATFORM_VENDOR, sizeof(cl_char)*1024, platformVendor, NULL );
-	clGetDeviceInfo( hardware.device, CL_DEVICE_NAME, sizeof(cl_char)*1024, deviceName, NULL );
-	fprintf(stderr, "GPU Info:\n  Platform name: %s\n  Vendor: %s\n  Device name: %s\n", platformName, platformVendor, deviceName );
-        int64_t gmem = (int64_t)_sclGetMaxGlobalMemSize(hardware.device);
-        int64_t maxalloc = (int64_t)_sclGetMaxMemAllocSize(hardware.device);
-        fprintf(stderr, "  GPU RAM:        %lld\n", gmem);
-        fprintf(stderr, "  GPU max malloc: %lld\n", maxalloc);	
-
-	clRetainCommandQueue( hardware.queue );
-	clRetainContext( hardware.context );
-	
-	return hardware;
-
-}
-
 
 // Bryan Little added opt flag to turn on/off optimizations during kernel compile
 sclSoft sclGetCLSoftware( char* source, char* name, sclHard hardware, int opt ){

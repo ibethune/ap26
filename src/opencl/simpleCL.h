@@ -105,8 +105,6 @@ void 			sclSetKernelArg( sclSoft software, int argnum, size_t typeSize, void *ar
 
 /* ####### Hardware init and selection #################### */
 
-sclHard 		sclGetBOINCHardware( int argc, char** argv );
-
 /* ######################################################## */
 
 /* INTERNAL FUNCITONS */
