@@ -79,7 +79,7 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		time (&start_time);
 
 		// init OKOK array   
-		setupoks(SHIFT,STEP,&OKOK);
+		setupoks(SHIFT,STEP,OKOK);
 
 		// start searching
 		for(i31=0;i31<7;++i31){
