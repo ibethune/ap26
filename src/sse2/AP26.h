@@ -42,7 +42,6 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	int64_t S31, S37, S41, S43, S47, S53, S59;
 
 	time_t start_time, finish_time;
-	time (&start_time);
 
 	STEP=K*PRIM23;
 	n0=(N0*(K%17835)+((N0*17835)%MOD)*(K/17835)+N30)%MOD;
@@ -74,15 +73,10 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	// 10 shift
 	for(SHIFT=startSHIFT+(iter*64); SHIFT<(startSHIFT+640); SHIFT+=64){
 
-<<<<<<< HEAD
 		time (&start_time);
 
-		// init OKOK array   
-		setupoks(SHIFT,STEP,OKOK);
-=======
 		// init OKOK arrays    
 		setupoks(SHIFT,STEP);
->>>>>>> parent of 2051a91... single okok array
 
 		// start searching
 		for(i31=0;i31<7;++i31){
@@ -289,15 +283,13 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		}
 		}
 
-		printf("Computation of K: %d SHIFT: %d complete\n", K, SHIFT);
+		time(&finish_time);
+		printf("Computation of K: %d SHIFT: %d complete in %d seconds\n", K, SHIFT, (int)finish_time - (int)start_time);
 		iter++;
 		checkpoint(startSHIFT,K,0,iter);
 
 	}
 
-
-	time(&finish_time);
-	printf("total CPU time for K was %d seconds\n", (int)finish_time - (int)start_time);
 
 
 }
