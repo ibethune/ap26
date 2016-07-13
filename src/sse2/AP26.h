@@ -18,7 +18,7 @@
    about how the algorithm works and for the copyleft notice.
 */
 
-
+#define numOK 23693
 #include "cpuconst.h"
 #include "setupoks.h"
 
@@ -40,9 +40,11 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	int64_t n0;
 	int64_t sito;
 	int64_t S31, S37, S41, S43, S47, S53, S59;
+	int64_t *OKOK;
 
 	time_t start_time, finish_time;
-	time (&start_time);
+
+        OKOK = (int64_t*)malloc(numOK * sizeof(int64_t));
 
 	STEP=K*PRIM23;
 	n0=(N0*(K%17835)+((N0*17835)%MOD)*(K/17835)+N30)%MOD;
@@ -74,8 +76,10 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	// 10 shift
 	for(SHIFT=startSHIFT+(iter*64); SHIFT<(startSHIFT+640); SHIFT+=64){
 
-		// init OKOK arrays    
-		setupoks(SHIFT,STEP);
+		time (&start_time);
+
+		// init OKOK array   
+		setupoks(SHIFT,STEP,&OKOK);
 
 		// start searching
 		for(i31=0;i31<7;++i31){
@@ -105,89 +109,89 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 			for(i59=(PRIME8-24);i59>0;i59--)
 			{
-				if(sito = OKOK61[_mm_extract_epi16(r_numvec1, 7)]
-						& OKOK67[_mm_extract_epi16(r_numvec1, 6)]
-						& OKOK71[_mm_extract_epi16(r_numvec1, 5)]
-						& OKOK73[_mm_extract_epi16(r_numvec1, 4)]
-						& OKOK79[_mm_extract_epi16(r_numvec1, 3)]
-						& OKOK83[_mm_extract_epi16(r_numvec1, 2)]
-						& OKOK89[_mm_extract_epi16(r_numvec1, 1)]
-						& OKOK97[_mm_extract_epi16(r_numvec1, 0)])
-				if(sito&=(OKOK101[_mm_extract_epi16(r_numvec2, 7)]
-						& OKOK103[_mm_extract_epi16(r_numvec2, 6)]
-						& OKOK107[_mm_extract_epi16(r_numvec2, 5)]
-						& OKOK109[_mm_extract_epi16(r_numvec2, 4)]
-						& OKOK113[_mm_extract_epi16(r_numvec2, 3)]
-						& OKOK127[_mm_extract_epi16(r_numvec2, 2)]
-						& OKOK131[_mm_extract_epi16(r_numvec2, 1)]
-						& OKOK137[_mm_extract_epi16(r_numvec2, 0)]))
-				if(sito&=(OKOK139[REM(n59,139,8)]
-						& OKOK149[REM(n59,149,8)]
-						& OKOK151[REM(n59,151,8)]
-						& OKOK157[REM(n59,157,8)]
-						& OKOK163[REM(n59,163,8)]
-						& OKOK167[REM(n59,167,8)]
-						& OKOK173[REM(n59,173,8)]
-						& OKOK179[REM(n59,179,8)]
-						& OKOK181[REM(n59,181,8)]
-						& OKOK191[REM(n59,191,8)]
-						& OKOK193[REM(n59,193,8)]))
-				if(sito&=(OKOK197[REM(n59,197,8)]
-						& OKOK199[REM(n59,199,8)]
-						& OKOK211[REM(n59,211,8)]
-						& OKOK223[REM(n59,223,8)]
-						& OKOK227[REM(n59,227,8)]
-						& OKOK229[REM(n59,229,8)]
-						& OKOK233[REM(n59,233,8)]
-						& OKOK239[REM(n59,239,8)]
-						& OKOK241[REM(n59,241,8)]
-						& OKOK251[REM(n59,251,8)]
-						& OKOK257[REM(n59,257,9)]))
-				if(sito&=(OKOK263[REM(n59,263,9)]
-						& OKOK269[REM(n59,269,9)]
-						& OKOK271[REM(n59,271,9)]
-						& OKOK277[REM(n59,277,9)]
-						& OKOK281[REM(n59,281,9)]
-						& OKOK283[REM(n59,283,9)]
-						& OKOK293[REM(n59,293,9)]
-						& OKOK307[REM(n59,307,9)]
-						& OKOK311[REM(n59,311,9)]
-						& OKOK313[REM(n59,313,9)]
-						& OKOK317[REM(n59,317,9)]))
-				if(sito&=(OKOK331[REM(n59,331,9)]
-						& OKOK337[REM(n59,337,9)]
-						& OKOK347[REM(n59,347,9)]
-						& OKOK349[REM(n59,349,9)]
-						& OKOK353[REM(n59,353,9)]
-						& OKOK359[REM(n59,359,9)]
-						& OKOK367[REM(n59,367,9)]
-						& OKOK373[REM(n59,373,9)]
-						& OKOK379[REM(n59,379,9)]
-						& OKOK383[REM(n59,383,9)]
-						& OKOK389[REM(n59,389,9)]))
-				if(sito&=(OKOK397[REM(n59,397,9)]
-						& OKOK401[REM(n59,401,9)]
-						& OKOK409[REM(n59,409,9)]
-						& OKOK419[REM(n59,419,9)]
-						& OKOK421[REM(n59,421,9)]
-						& OKOK431[REM(n59,431,9)]
-						& OKOK433[REM(n59,433,9)]
-						& OKOK439[REM(n59,439,9)]
-						& OKOK443[REM(n59,443,9)]
-						& OKOK449[REM(n59,449,9)]
-						& OKOK457[REM(n59,457,9)]))
-				if(sito&=(OKOK461[REM(n59,461,9)]
-						& OKOK463[REM(n59,463,9)]
-						& OKOK467[REM(n59,467,9)]
-						& OKOK479[REM(n59,479,9)]
-						& OKOK487[REM(n59,487,9)]
-						& OKOK491[REM(n59,491,9)]
-						& OKOK499[REM(n59,499,9)]
-						& OKOK503[REM(n59,503,9)]
-						& OKOK509[REM(n59,509,9)]
-						& OKOK521[REM(n59,521,10)]
-						& OKOK523[REM(n59,523,10)]
-						& OKOK541[REM(n59,541,10)]))
+				if(sito = OKOK[_mm_extract_epi16(r_numvec1, 7)]
+						& OKOK[_mm_extract_epi16(r_numvec1, 6)+61]
+						& OKOK[_mm_extract_epi16(r_numvec1, 5)+128]
+						& OKOK[_mm_extract_epi16(r_numvec1, 4)+199]
+						& OKOK[_mm_extract_epi16(r_numvec1, 3)+272]
+						& OKOK[_mm_extract_epi16(r_numvec1, 2)+351]
+						& OKOK[_mm_extract_epi16(r_numvec1, 1)+434]
+						& OKOK[_mm_extract_epi16(r_numvec1, 0)+523])
+				if(sito&=(OKOK[_mm_extract_epi16(r_numvec2, 7)+620]
+						& OKOK[_mm_extract_epi16(r_numvec2, 6)+721]
+						& OKOK[_mm_extract_epi16(r_numvec2, 5)+824]
+						& OKOK[_mm_extract_epi16(r_numvec2, 4)+931]
+						& OKOK[_mm_extract_epi16(r_numvec2, 3)+1040]
+						& OKOK[_mm_extract_epi16(r_numvec2, 2)+1153]
+						& OKOK[_mm_extract_epi16(r_numvec2, 1)+1280]
+						& OKOK[_mm_extract_epi16(r_numvec2, 0)+1411]))
+				if(sito&=(OKOK[(REM(n59,139,8))+1548]
+						& OKOK[(REM(n59,149,8))+1687]
+						& OKOK[(REM(n59,151,8))+1836]
+						& OKOK[(REM(n59,157,8))+1987]
+						& OKOK[(REM(n59,163,8))+2144]
+						& OKOK[(REM(n59,167,8))+2307]
+						& OKOK[(REM(n59,173,8))+2474]
+						& OKOK[(REM(n59,179,8))+2647]
+						& OKOK[(REM(n59,181,8))+2826]
+						& OKOK[(REM(n59,191,8))+3007]
+						& OKOK[(REM(n59,193,8))+3198]))
+				if(sito&=(OKOK[(REM(n59,197,8))+3391]
+						& OKOK[(REM(n59,199,8))+3588]
+						& OKOK[(REM(n59,211,8))+3787]
+						& OKOK[(REM(n59,223,8))+3998]
+						& OKOK[(REM(n59,227,8))+4221]
+						& OKOK[(REM(n59,229,8))+4448]
+						& OKOK[(REM(n59,233,8))+4677]
+						& OKOK[(REM(n59,239,8))+4910]
+						& OKOK[(REM(n59,241,8))+5149]
+						& OKOK[(REM(n59,251,8))+5390]
+						& OKOK[(REM(n59,257,9))+5641]))
+				if(sito&=(OKOK[(REM(n59,263,9))+5898]
+						& OKOK[(REM(n59,269,9))+6161]
+						& OKOK[(REM(n59,271,9))+6430]
+						& OKOK[(REM(n59,277,9))+6701]
+						& OKOK[(REM(n59,281,9))+6978]
+						& OKOK[(REM(n59,283,9))+7259]
+						& OKOK[(REM(n59,293,9))+7542]
+						& OKOK[(REM(n59,307,9))+7835]
+						& OKOK[(REM(n59,311,9))+8142]
+						& OKOK[(REM(n59,313,9))+8453]
+						& OKOK[(REM(n59,317,9))+8766]))
+				if(sito&=(OKOK[(REM(n59,331,9))+9083]
+						& OKOK[(REM(n59,337,9))+9414]
+						& OKOK[(REM(n59,347,9))+9751]
+						& OKOK[(REM(n59,349,9))+10098]
+						& OKOK[(REM(n59,353,9))+10447]
+						& OKOK[(REM(n59,359,9))+10800]
+						& OKOK[(REM(n59,367,9))+11159]
+						& OKOK[(REM(n59,373,9))+11526]
+						& OKOK[(REM(n59,379,9))+11899]
+						& OKOK[(REM(n59,383,9))+12278]
+						& OKOK[(REM(n59,389,9))+12661]))
+				if(sito&=(OKOK[(REM(n59,397,9))+13050]
+						& OKOK[(REM(n59,401,9))+13447]
+						& OKOK[(REM(n59,409,9))+13848]
+						& OKOK[(REM(n59,419,9))+14257]
+						& OKOK[(REM(n59,421,9))+14676]
+						& OKOK[(REM(n59,431,9))+15097]
+						& OKOK[(REM(n59,433,9))+15528]
+						& OKOK[(REM(n59,439,9))+15961]
+						& OKOK[(REM(n59,443,9))+16400]
+						& OKOK[(REM(n59,449,9))+16843]
+						& OKOK[(REM(n59,457,9))+17292]))
+				if(sito&=(OKOK[(REM(n59,461,9))+17749]
+						& OKOK[(REM(n59,463,9))+18210]
+						& OKOK[(REM(n59,467,9))+18673]
+						& OKOK[(REM(n59,479,9))+19140]
+						& OKOK[(REM(n59,487,9))+19619]
+						& OKOK[(REM(n59,491,9))+20106]
+						& OKOK[(REM(n59,499,9))+20597]
+						& OKOK[(REM(n59,503,9))+21096]
+						& OKOK[(REM(n59,509,9))+21599]
+						& OKOK[(REM(n59,521,10))+22108]
+						& OKOK[(REM(n59,523,10))+22629]
+						& OKOK[(REM(n59,541,10))+23152]))
 
 				{
 
@@ -283,14 +287,14 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		}
 
 		printf("Computation of K: %d SHIFT: %d complete\n", K, SHIFT);
+		time(&finish_time);
+		printf("CPU time: %d sec\n", (int)finish_time - (int)start_time);
 		iter++;
 		checkpoint(startSHIFT,K,0,iter);
 
 	}
 
-
-	time(&finish_time);
-	printf("total CPU time for K was %d seconds\n", (int)finish_time - (int)start_time);
+	free(OKOK);
 
 
 }
