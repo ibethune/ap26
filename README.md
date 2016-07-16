@@ -51,16 +51,20 @@
 
      ./AP26 XXXXXX XXXXXX 0
 
+   When testing the OpenCL app, an init_data.xml file will be needed in
+   the directory containing GPU type and device number. See the
+   /tests/INIT_DATA test files/ directory for examples.
+
 ## Program operation:
 
    search parameters are given on the command line as
 
-     AP26 [KMIN KMAX SHIFT] [--device N] where N is the GPU to use
+     AP26 [KMIN KMAX SHIFT]
 
    The search will begin at K=KMIN unless a file AP26-state.txt
    exists containing a checkpoint of the form
 
-     KMIN KMAX SHIFT K HASH
+     KMIN KMAX SHIFT K ITER HASH LASTTRICKLE
 
    with KMIN KMAX SHIFT matching the initial search parameters, in which
    case the search will resume from that checkpoint.
@@ -68,7 +72,7 @@
    The search will continue up to and including K=KMAX. On completion
    AP26-state.txt will contain a checkpoint of the form
 
-     KMIN KMAX SHIFT KMAX+1 HASH
+     KMIN KMAX SHIFT KMAX+1 ITER HASH LASTTRICKLE
 
    Periodic checkpoints will be written to AP26-state.txt.
    All search results and a result hash will be appended to SOL-AP26.txt.
