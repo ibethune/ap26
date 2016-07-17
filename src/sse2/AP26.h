@@ -22,10 +22,14 @@
 #include "cpuconst.h"
 #include "setupoks.h"
 
+#if _MSC_VER
+#include <intrin.h>
+#endif
+
 
 // selects elements from two vectors based on a selection mask
 #define vec_sel(_X, _Y, _Z) \
-	_mm_or_si128( _mm_andnot_si128( _Z, _X ), _mm_and_si128( _Y, _Z ) )
+	_mm_xor_si128(_X, _mm_and_si128(_Z, _mm_xor_si128(_Y, _X)))
 
 
 
@@ -69,7 +73,6 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 	__m128i zerovec		= _mm_set_epi16(0, 0, 0, 0, 0, 0, 0, 0);
 		
-
 	// 10 shift
 	for(SHIFT=startSHIFT+(iter*64); SHIFT<(startSHIFT+640); SHIFT+=64){
 
@@ -191,10 +194,20 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 						& OKOK541[REM(n59,541,10)]))
 
 				{
-
 					int b;
-					for(b=0;b<64;b++)
-						if((sito>>b)&1)
+
+#if defined(_MSC_VER) && defined(__x86_64__)
+					unsigned long bLimit, bStart;
+
+					_BitScanReverse64(&bLimit, sito);
+					_BitScanForward64(&bStart, sito);
+					for (b = bStart; b <= bLimit; b++)
+						if (_bittest64(&sito, b))
+#else
+#warning TODO gcc bit scan
+					for (b = 0; b<64; b++)
+						if ((sito >> b) & 1)
+#endif
 						{
 							n=n59+(b+SHIFT)*MOD;
 
@@ -282,11 +295,11 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		}
 		}
 		}
-
-		time(&finish_time);
+time(&finish_time);
 		printf("Computation of K: %d SHIFT: %d complete in %d seconds\n", K, SHIFT, (int)finish_time - (int)start_time);
 		iter++;
 		checkpoint(startSHIFT,K,0,iter);
+		
 
 	}
 
