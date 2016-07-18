@@ -166,8 +166,11 @@ sclHard sclGetBOINCHardware( int argc, char** argv ) {
 	cl_char platformName[1024];
 	int i;
 
-
+#if BOINC_MAJOR_VERSION < 7 || (BOINC_MAJOR_VERSION == 7 && BOINC_MINOR_VERSION == 0)
+	retval = boinc_get_opencl_ids(&device, &platform);
+#else
 	retval = boinc_get_opencl_ids(argc, argv, 0, &device, &platform);
+#endif
 	if (retval) {
 		fprintf(stderr, "Error: boinc_get_opencl_ids() failed with error %d\n", retval );
 		exit(EXIT_FAILURE);

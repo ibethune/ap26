@@ -33,6 +33,11 @@
 // selects elements from two vectors based on a selection mask
 #define vec_sel(_X, _Y, _Z) _mm256_blendv_epi8(_X, _Y, _Z)
 
+// define this macro for compilers (e.g. GCC) that don't provide it
+#ifndef _mm256_set_m128i
+#define _mm256_set_m128i(v0, v1)  _mm256_insertf128_si256(_mm256_castsi128_si256(v1), (v0), 1)
+#endif
+
 
 void SearchAP26(int K, int startSHIFT, int ITER)
 { 

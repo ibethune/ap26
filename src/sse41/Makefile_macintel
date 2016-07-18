@@ -1,7 +1,7 @@
 CC = gcc
 LD = $(CC)
 
-APP = ap26_avx2_macintel64
+APP = ap26_sse41_macintel64
 
 SRC = ../common/AP26.cpp ../common/CONST.H ../common/PrimeQ_x86.h AP26.h cpuconst.h setupoks.h
 OBJ = AP26.o
@@ -10,8 +10,8 @@ BOINC_DIR = ../../../boinc_707
 BOINC_INC = -I$(BOINC_DIR)/api -I$(BOINC_DIR)/lib
 BOINC_LIB = -L$(BOINC_DIR)/mac_build/build/Deployment/ -lboinc -lboinc_api -lstdc++
 
-DFLAGS  = -DAP26_BOINC -DAP26_AVX2
-CFLAGS  = -Wa,-q -I . -O3 -arch x86_64 -mavx2 -mfma -isysroot /Developer/SDKs/MacOSX10.9.sdk -mmacosx-version-min=10.9
+DFLAGS  = -DAP26_BOINC -DAP26_SSE41
+CFLAGS  = -I . -O3 -arch x86_64 -msse4.1 -isysroot /Developer/SDKs/MacOSX10.9.sdk -mmacosx-version-min=10.9
 LDFLAGS = $(CFLAGS)
 
 all : $(APP) 
