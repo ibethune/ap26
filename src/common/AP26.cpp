@@ -12,6 +12,9 @@
 #ifdef AP26_SSE2
 # define TARGET "SSE2"
 #endif
+#ifdef AP26_SSE41
+# define TARGET "SSE41"
+#endif
 #ifdef AP26_AVX2
 # define TARGET "AVX2"
 #endif
@@ -33,6 +36,11 @@
 #ifdef AP26_SSE2
 # include <time.h>
 # include <emmintrin.h>
+#endif
+
+#ifdef AP26_SSE41
+# include <time.h>
+# include <smmintrin.h>
 #endif
 
 #ifdef AP26_AVX2
@@ -245,6 +253,7 @@ static FILE *my_fopen(const char *filename, const char *mode)
 
 #define TRICKLE_PERIOD 86400.0 // Once per day
 
+#ifdef AP26_BOINC
 void handle_trickle_up()
 {
     if (boinc_is_standalone()) return; // Only send trickles if we have a real BOINC server to talk to
@@ -275,6 +284,7 @@ void handle_trickle_up()
     }
 
 }
+#endif
 
 // Bryan Little 6-9-2016
 // BOINC result hash calculation, write to solution file, and close.
@@ -569,11 +579,21 @@ int main(int argc, char *argv[])
 
 
 #ifdef AP26_BOINC
+#ifdef __INTEL_COMPILER
+	fprintf(stderr, "AP26 %s 10-shift search version %d.%d%s by Bryan Little and Iain Bethune\n", TARGET, MAJORV, MINORV, SUFFIXV);
+	fprintf(stderr, "Compiled %s with ICC %d\n", __DATE__, __INTEL_COMPILER);
+#else
 	fprintf(stderr, "AP26 %s 10-shift search version %d.%d%s by Bryan Little and Iain Bethune\n",TARGET,MAJORV,MINORV,SUFFIXV);
 	fprintf(stderr, "Compiled " __DATE__ " with GCC " __VERSION__ "\n");
+#endif
+#else
+#ifdef __INTEL_COMPILER
+		printf("AP26 %s 10-shift search version %d.%d%s by Bryan Little and Iain Bethune\n", TARGET, MAJORV, MINORV, SUFFIXV);
+		printf("Compiled %s with ICC %d\n", __DATE__, __INTEL_COMPILER);
 #else
         printf("AP26 %s 10-shift search version %d.%d%s by Bryan Little and Iain Bethune\n",TARGET,MAJORV,MINORV,SUFFIXV);
         printf("Compiled " __DATE__ " with GCC " __VERSION__ "\n");
+#endif
 #endif
 
         // Print out cmd line for diagnostics

@@ -128,8 +128,13 @@ static int strong_prp(int64_t a, int64_t N)
   t = __builtin_ctzll(N-1);
   d = (uint64_t)N >> t;
 #else
+#if defined(_MSC_VER) && defined(__x86_64__)
+  _BitScanForward64(&t, uint64_t(N - 1));
+  d = (uint64_t)N >> t;
+#else
   for (d = (uint64_t)N >> 1, t = 1; !(d & 1); d >>= 1, t++)
     ;
+#endif
 #endif
 
   /* r <-- a^d mod N, assuming d odd */
