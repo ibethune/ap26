@@ -33,7 +33,7 @@ void sleepcpu(){
 	cl_int info;
 	struct timespec sleep_time;
 	sleep_time.tv_sec = 0;
-	sleep_time.tv_nsec = 10000000;	// 10ms
+	sleep_time.tv_nsec = 1000000;	// 1ms
 
 	err = clEnqueueMarker( hardware.queue, &kernelsDone);
 	if ( err != CL_SUCCESS ) {
@@ -178,6 +178,7 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		time (&start_time);
 
 		int numinq=0;
+		int progress=0;
 
 		// clearok kernel
 		global_size[0]=23744; global_size[1]=1;
@@ -226,6 +227,9 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 		for(devicearray=0; devicearray<4; devicearray++){
 			for( p=0; p<quartern59s; p+=worksize ){
+
+				progress++;
+				printf("progress: %d\n",progress);
 
 				if(profile){
 					sleepcpu();  // clear queue
@@ -276,14 +280,14 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 
 				if(profile){
-					// kernel profile to limit ocl queue to less than .2 sec
+					// kernel profile to limit ocl queue to less than .1 sec
 					sclFinish(hardware);
 					clock_gettime(CLOCK_MONOTONIC, &petime);
 					proftime = diff(pstime,petime);
 					fprintf(stderr, "kernel profile (sec): %d, (nanoseconds): %d\n", proftime.tv_sec, proftime.tv_nsec);
 					int64_t totalnano = (proftime.tv_sec * 1000000000) + proftime.tv_nsec;
-					if(totalnano < 200000000){
-						profileq = 200000000 / totalnano;
+					if(totalnano < 100000000){
+						profileq = 100000000 / totalnano;
 					}
 					else{
 						profileq = 1;

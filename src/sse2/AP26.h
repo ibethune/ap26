@@ -22,10 +22,6 @@
 #include "cpuconst.h"
 #include "setupoks.h"
 
-#if _MSC_VER
-#include <intrin.h>
-#endif
-
 
 // selects elements from two vectors based on a selection mask
 #define vec_sel(_X, _Y, _Z) \
@@ -44,8 +40,9 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	int64_t n0;
 	int64_t sito;
 	int64_t S31, S37, S41, S43, S47, S53, S59;
-
+	double d;
 	time_t start_time, finish_time;
+	int progress;
 
 	STEP=K*PRIM23;
 	n0=(N0*(K%17835)+((N0*17835)%MOD)*(K/17835)+N30)%MOD;
@@ -78,6 +75,8 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 		time (&start_time);
 
+		progress=0;
+
 		// init OKOK arrays    
 		setupoks(SHIFT,STEP);
 
@@ -85,6 +84,13 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		for(i31=0;i31<7;++i31){
 		for(i37=0;i37<13;++i37)
 		if(i37-i31<=10&&i31-i37<=4)
+		{
+			// 85x
+			progress++;
+			d = (double)(K_DONE*10+iter)/(K_COUNT*10);
+			d += (double)progress/850;
+			boinc_fraction_done(d);
+
 		for(i41=0;i41<17;++i41)
 		if(i41-i31<=14&&i41-i37<=14&&i31-i41<=4&&i37-i41<=10)
 		for(i3=0;i3<2;++i3)
@@ -195,19 +201,8 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 				{
 					int b;
-
-#if defined(_MSC_VER) && defined(__x86_64__)
-					unsigned long bLimit, bStart;
-
-					_BitScanReverse64(&bLimit, sito);
-					_BitScanForward64(&bStart, sito);
-					for (b = bStart; b <= bLimit; b++)
-						if (_bittest64(&sito, b))
-#else
-#warning TODO gcc bit scan
 					for (b = 0; b<64; b++)
 						if ((sito >> b) & 1)
-#endif
 						{
 							n=n59+(b+SHIFT)*MOD;
 
@@ -295,7 +290,8 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		}
 		}
 		}
-time(&finish_time);
+		}
+		time(&finish_time);
 		printf("Computation of K: %d SHIFT: %d complete in %d seconds\n", K, SHIFT, (int)finish_time - (int)start_time);
 		iter++;
 		checkpoint(startSHIFT,K,0,iter);
