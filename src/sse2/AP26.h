@@ -42,7 +42,6 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	int64_t S31, S37, S41, S43, S47, S53, S59;
 	double d;
 	time_t start_time, finish_time;
-	int progress;
 
 	STEP=K*PRIM23;
 	n0=(N0*(K%17835)+((N0*17835)%MOD)*(K/17835)+N30)%MOD;
@@ -75,7 +74,7 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 		time (&start_time);
 
-		progress=0;
+		int progress=0;
 
 		// init OKOK arrays    
 		setupoks(SHIFT,STEP);

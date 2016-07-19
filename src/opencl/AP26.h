@@ -234,7 +234,6 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 				d = (double)(K_DONE*10+iter)/(K_COUNT*10);
 				d += (double)progress/880;
 				boinc_fraction_done(d);
-				printf("progress: %lf\n",d);
 
 				if(profile){
 					sleepcpu();  // clear queue
