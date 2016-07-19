@@ -90,6 +90,7 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	int profile=1;
 	int profileq;
 	int iter=ITER;
+	double d;
 	struct timespec proftime, pstime, petime;
 
 	time_t total_start_time, total_finish_time;
