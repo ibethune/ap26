@@ -228,8 +228,12 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		for(devicearray=0; devicearray<4; devicearray++){
 			for( p=0; p<quartern59s; p+=worksize ){
 
+				// 88x
 				progress++;
-				printf("progress: %d\n",progress);
+				d = (double)(K_DONE*10+iter)/(K_COUNT*10);
+				d += (double)progress/880;
+				boinc_fraction_done(d);
+				printf("progress: %lf\n",d);
 
 				if(profile){
 					sleepcpu();  // clear queue
