@@ -22,6 +22,10 @@
 #include "cpuconst.h"
 #include "setupoks.h"
 
+#if _MSC_VER
+#include <intrin.h>
+#endif
+
 
 // selects elements from two vectors based on a selection mask
 #define vec_sel(_X, _Y, _Z) \
@@ -200,8 +204,18 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 				{
 					int b;
-					for (b = 0; b<64; b++)
+					unsigned long bLimit, bStart;
+#if defined(_MSC_VER) && defined(__x86_64__)
+					_BitScanReverse64(&bLimit, sito);
+					_BitScanForward64(&bStart, sito);
+					for (b = bStart; b <= bLimit; b++)
+						if (_bittest64(&sito, b))
+#else
+					bLimit = __builtin_clzll(sito);
+					bStart = __builtin_ctzll(sito);
+					for (b = bStart; b <= bLimit; b++)
 						if ((sito >> b) & 1)
+#endif
 						{
 							n=n59+(b+SHIFT)*MOD;
 
