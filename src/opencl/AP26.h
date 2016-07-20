@@ -3,9 +3,9 @@
 	***************
 	Bryan Little Jun 30 2016
 	+ Using ~1.1GB VRAM on GPU
-	+ Using ~415MB RAM on host
+	+ Using <400MB RAM on host
 	+ This is code tuned for Nvidia and AMD GPU OpenCL devices.
-	+ Limit kernel queue depth to .2 sec to improve screen refresh
+	+ Limit kernel queue depth to .1 sec to improve screen refresh
 
 */
 
@@ -94,7 +94,10 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	struct timespec proftime, pstime, petime;
 
 	time_t total_start_time, total_finish_time;
+	time_t last_time, curr_time;
+
 	time (&total_start_time);
+	time (&last_time);
 
 
 	STEP=K*PRIM23;
@@ -229,11 +232,16 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		for(devicearray=0; devicearray<4; devicearray++){
 			for( p=0; p<quartern59s; p+=worksize ){
 
+				// update BOINC progress every 2 sec
 				// 88x
 				progress++;
-				d = (double)(K_DONE*10+iter)/(K_COUNT*10);
-				d += (double)progress/880;
-				boinc_fraction_done(d);
+				time (&curr_time);
+				if( ((int)curr_time - (int)last_time) > 1 ){
+					d = (double)(K_DONE*10+iter)/(K_COUNT*10);
+					d += (double)progress/880;
+					boinc_fraction_done(d);
+					last_time = curr_time;
+				}
 
 				if(profile){
 					sleepcpu();  // clear queue
