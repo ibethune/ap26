@@ -67,29 +67,33 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 	//quick loop vectors
 	__m256i s53vec1 = _mm256_set_epi16(S53%101, S53%103, S53%107, S53%109, S53%113, S53%127, S53%131, S53%137, S53%61, S53%67, S53%71, S53%73, S53%79, S53%83, S53%89, S53%97);
+	__m256i s53vec2 = _mm256_set_epi16(S53%181, S53%191, S53%193, S53%197, S53%199, S53%211, S53%223, S53%227, S53%139, S53%149, S53%151, S53%157, S53%163, S53%167, S53%173, S53%179);
 
-	__m256i svec1		= _mm256_set_epi16(S59%101, S59%103, S59%107, S59%109, S59%113, S59%127, S59%131, S59%137, S59%61, S59%67, S59%71, S59%73, S59%79, S59%83, S59%89, S59%97);
-	//__m256i svec2 = _mm256_set_epi16(S59%227, S59%223, S59%211, S59%199, S59%197, S59%193, S59%191, S59%181, S59%179, 
-	//	S59%173, S59%167, S59%163, S59%157, S59%151, S59%149, S59%139);
+
+	__m256i svec1 = _mm256_set_epi16(S59%101, S59%103, S59%107, S59%109, S59%113, S59%127, S59%131, S59%137, S59%61, S59%67, S59%71, S59%73, S59%79, S59%83, S59%89, S59%97);
+	__m256i svec2 = _mm256_set_epi16(S59%181, S59%191, S59%193, S59%197, S59%199, S59%211, S59%223, S59%227, S59%139, S59%149, S59%151, S59%157, S59%163, S59%167, S59%173, S59%179);
 	
-    __m256i mvec1		= _mm256_set_epi16(MOD%101, MOD%103, MOD%107, MOD%109, MOD%113, MOD%127, MOD%131, MOD%137,MOD%61, MOD%67, MOD%71, MOD%73, MOD%79, MOD%83, MOD%89, MOD%97);
-	//__m256i mvec2 = _mm256_set_epi16(MOD%227, MOD%223, MOD%211, MOD%199, MOD%197, MOD%193, MOD%191, MOD%181, MOD%179,
-	//	MOD%173, MOD%167, MOD%163, MOD%157, MOD%151, MOD%149, MOD%139);
+    __m256i mvec1 = _mm256_set_epi16(MOD%101, MOD%103, MOD%107, MOD%109, MOD%113, MOD%127, MOD%131, MOD%137,MOD%61, MOD%67, MOD%71, MOD%73, MOD%79, MOD%83, MOD%89, MOD%97);
+	__m256i mvec2 = _mm256_set_epi16(MOD%181, MOD%191, MOD%193, MOD%197, MOD%199, MOD%211, MOD%223, MOD%227, MOD%139, MOD%149, MOD%151, MOD%157, MOD%163, MOD%167, MOD%173, MOD%179);
 
 	__m256i m59vec1 = _mm256_sub_epi16(svec1, mvec1);
+	__m256i m59vec2 = _mm256_sub_epi16(svec2, mvec2);
 
-    __m256i numvec11	= _mm256_set_epi16(101, 103, 107, 109, 113, 127, 131, 137, 61, 67, 71, 73, 79, 83, 89, 97);
-		//__m256i numvec12 = _mm256_set_epi16(227, 223, 211, 199, 197, 193, 191, 181, 179, 173, 167, 163, 157, 151, 149, 139);
+    __m256i numvec11 = _mm256_set_epi16(101, 103, 107, 109, 113, 127, 131, 137, 61, 67, 71, 73, 79, 83, 89, 97);
+	__m256i numvec12 = _mm256_set_epi16(181, 191, 193, 197, 199, 211, 223, 227, 139, 149, 151, 157, 163, 167, 173, 179);
 
-    __m256i numvec21		= _mm256_set_epi16(100, 102, 106, 108, 112, 126, 130, 136, 60, 66, 70, 72, 78, 82, 88, 96);
-		//__m256i numvec22 = _mm256_set_epi16(226, 222, 210, 198, 196, 192, 190, 180, 178, 172, 166, 162, 156, 150, 148, 138);
-
-     __m256i zerovec	= _mm256_set_epi16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    __m256i numvec21 = _mm256_set_epi16(100, 102, 106, 108, 112, 126, 130, 136, 60, 66, 70, 72, 78, 82, 88, 96);
+	__m256i numvec22 = _mm256_set_epi16(180, 190, 192, 196, 198, 210, 222, 226, 138, 148, 150, 156, 162, 166, 172, 178);
 
 	 __m256d v3con1 = _mm256_set_pd((1.0 / 61.0), (1.0 / 67.0), (1.0 / 71.0), (1.0 / 73.0)); 
 	 __m256d v3con2 = _mm256_set_pd((1.0 / 79.0), (1.0 / 83.0), (1.0 / 89.0), (1.0 / 97.0));
 	 __m256d v3con3 = _mm256_set_pd((1.0 / 101.0), (1.0 / 103.0), (1.0 / 107.0), (1.0 / 109.0));
 	 __m256d v3con4 = _mm256_set_pd((1.0 / 113.0), (1.0 / 127.0), (1.0 / 131.0), (1.0 / 137.0));
+
+	 __m256d v3con5 = _mm256_set_pd((1.0 / 139.0), (1.0 / 149.0), (1.0 / 151.0), (1.0 / 157.0));
+	 __m256d v3con6 = _mm256_set_pd((1.0 / 163.0), (1.0 / 167.0), (1.0 / 173.0), (1.0 / 179.0));
+	 __m256d v3con7 = _mm256_set_pd((1.0 / 181.0), (1.0 / 191.0), (1.0 / 193.0), (1.0 / 197.0));
+	 __m256d v3con8 = _mm256_set_pd((1.0 / 199.0), (1.0 / 211.0), (1.0 / 223.0), (1.0 / 227.0));
 		 
 
 	 __m256d v3cond1 = _mm256_set_pd((61.0), (67.0), (71.0), (73.0));
@@ -97,20 +101,33 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	 __m256d v3cond3 = _mm256_set_pd((101.0), (103.0), (107.0), (109.0));
 	 __m256d v3cond4 = _mm256_set_pd((113.0), (127.0), (131.0), (137.0));
 
+	 __m256d v3cond5 = _mm256_set_pd((139.0), (149.0), (151.0), (157.0));
+	 __m256d v3cond6 = _mm256_set_pd((163.0), (167.0), (173.0), (179.0));
+	 __m256d v3cond7 = _mm256_set_pd((181.0), (191.0), (193.0), (197.0));
+	 __m256d v3cond8 = _mm256_set_pd((199.0), (211.0), (223.0), (227.0));
+
 	 __m256i c59vec1 = _mm256_sub_epi16(mvec1, svec1);
+	 __m256i c59vec2 = _mm256_sub_epi16(mvec2, svec2);
 
 	 __m256i a59vec1 = _mm256_sub_epi16(svec1, mvec1);
+	 __m256i a59vec2 = _mm256_sub_epi16(svec2, mvec2);
 
 	 __m256i a59vec1e = _mm256_add_epi16(a59vec1, numvec11);
+	 __m256i a59vec2e = _mm256_add_epi16(a59vec2, numvec12);
 
 	 __m256i c53vec1 = _mm256_sub_epi16(mvec1, s53vec1);
+	 __m256i c53vec2 = _mm256_sub_epi16(mvec2, s53vec2);
 
 	 __m256i a53vec1 = _mm256_sub_epi16(s53vec1, mvec1);
+	 __m256i a53vec2 = _mm256_sub_epi16(s53vec2, mvec2);
 
 	 __m256i a53vec1e = _mm256_add_epi16(a53vec1, numvec11);
+	 __m256i a53vec2e = _mm256_add_epi16(a53vec2, numvec12);
 
 	// 10 shift
-	for(SHIFT=startSHIFT+(iter*64); SHIFT<(startSHIFT+640); SHIFT+=64){
+	//for(SHIFT=startSHIFT+(iter*64); SHIFT<(startSHIFT+640); SHIFT+=64){
+	 #warning "debug only, uncomment up"
+	 for (SHIFT = startSHIFT + (iter * 64); SHIFT<(startSHIFT + 64); SHIFT += 64){
 
 		time(&start_time);
 
@@ -142,31 +159,56 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		__m256d v3mul3 = _mm256_mul_pd(vn53, v3con3);
 		__m256d v3mul4 = _mm256_mul_pd(vn53, v3con4);
 
+		__m256d v3mul5 = _mm256_mul_pd(vn53, v3con5);
+		__m256d v3mul6 = _mm256_mul_pd(vn53, v3con6);
+		__m256d v3mul7 = _mm256_mul_pd(vn53, v3con7);
+		__m256d v3mul8 = _mm256_mul_pd(vn53, v3con8);
+
 		v3mul1 = _mm256_floor_pd(v3mul1);
 		v3mul2 = _mm256_floor_pd(v3mul2);
 		v3mul3 = _mm256_floor_pd(v3mul3);
 		v3mul4 = _mm256_floor_pd(v3mul4);
+
+		v3mul5 = _mm256_floor_pd(v3mul5);
+		v3mul6 = _mm256_floor_pd(v3mul6);
+		v3mul7 = _mm256_floor_pd(v3mul7);
+		v3mul8 = _mm256_floor_pd(v3mul8);
 
 		v3mul1 = _mm256_fnmadd_pd(v3mul1, v3cond1, vn53);
 		v3mul2 = _mm256_fnmadd_pd(v3mul2, v3cond2, vn53);
 		v3mul3 = _mm256_fnmadd_pd(v3mul3, v3cond3, vn53);
 		v3mul4 = _mm256_fnmadd_pd(v3mul4, v3cond4, vn53);
 
+		v3mul5 = _mm256_fnmadd_pd(v3mul5, v3cond5, vn53);
+		v3mul6 = _mm256_fnmadd_pd(v3mul6, v3cond6, vn53);
+		v3mul7 = _mm256_fnmadd_pd(v3mul7, v3cond7, vn53);
+		v3mul8 = _mm256_fnmadd_pd(v3mul8, v3cond8, vn53);
+
 		__m128i v3num1 = _mm256_cvttpd_epi32(v3mul1);
 		__m128i v3num2 = _mm256_cvttpd_epi32(v3mul2);
 		__m128i v3num3 = _mm256_cvttpd_epi32(v3mul3);
 		__m128i v3num4 = _mm256_cvttpd_epi32(v3mul4);
 
+		__m128i v3num5 = _mm256_cvttpd_epi32(v3mul5);
+		__m128i v3num6 = _mm256_cvttpd_epi32(v3mul6);
+		__m128i v3num7 = _mm256_cvttpd_epi32(v3mul7);
+		__m128i v3num8 = _mm256_cvttpd_epi32(v3mul8);
+
 		__m128i r_numvec1a = _mm_packus_epi32(v3num2, v3num1);
 		__m128i r_numvec2a = _mm_packus_epi32(v3num4, v3num3);
 
+		__m128i r_numvec1b = _mm_packus_epi32(v3num6, v3num5);
+		__m128i r_numvec2b = _mm_packus_epi32(v3num8, v3num7);
+
 		__m256i r_numvec1t = _mm256_set_m128i(r_numvec2a, r_numvec1a);
+		__m256i r_numvec2t = _mm256_set_m128i(r_numvec2b, r_numvec1b);
 
 		for(i53=(PRIME7-24);i53>0;i53--)
 		{
 		n59=n53;
 
 		__m256i r_numvec1 = r_numvec1t;
+		__m256i r_numvec2 = r_numvec2t;
 
 			for(i59=(PRIME8-24);i59>0;i59--)
 			{
@@ -177,62 +219,38 @@ void SearchAP26(int K, int startSHIFT, int ITER)
                                                 & OKOK79[_mm256_extract_epi16(r_numvec1, 3)]
                                                 & OKOK83[_mm256_extract_epi16(r_numvec1, 2)]
                                                 & OKOK89[_mm256_extract_epi16(r_numvec1, 1)]
-                                                & OKOK97[_mm256_extract_epi16(r_numvec1, 0)])
-                                if(sito&=(OKOK101[_mm256_extract_epi16(r_numvec1, 15)]
+                                                & OKOK97[_mm256_extract_epi16(r_numvec1, 0)]
+												& OKOK101[_mm256_extract_epi16(r_numvec1, 15)]
                                                 & OKOK103[_mm256_extract_epi16(r_numvec1, 14)]
                                                 & OKOK107[_mm256_extract_epi16(r_numvec1, 13)]
                                                 & OKOK109[_mm256_extract_epi16(r_numvec1, 12)]
                                                 & OKOK113[_mm256_extract_epi16(r_numvec1, 11)]
                                                 & OKOK127[_mm256_extract_epi16(r_numvec1, 10)]
                                                 & OKOK131[_mm256_extract_epi16(r_numvec1, 9)]
-                                                & OKOK137[_mm256_extract_epi16(r_numvec1, 8)]))
-												//if (sito &= (OKOK139[_mm256_extract_epi16(r_numvec2, 0)]
-												//	& OKOK149[_mm256_extract_epi16(r_numvec2, 1)]
-												//	& OKOK151[_mm256_extract_epi16(r_numvec2, 2)]
-												//	& OKOK157[_mm256_extract_epi16(r_numvec2, 3)]
-												//	& OKOK163[_mm256_extract_epi16(r_numvec2, 4)]
-												//	& OKOK167[_mm256_extract_epi16(r_numvec2, 5)]
-												//	& OKOK173[_mm256_extract_epi16(r_numvec2, 6)]
-												//	& OKOK179[_mm256_extract_epi16(r_numvec2, 7)]))
-												//	if (sito &= (OKOK181[_mm256_extract_epi16(r_numvec2, 8)]
-												//		& OKOK191[_mm256_extract_epi16(r_numvec2, 9)]
-												//		& OKOK193[_mm256_extract_epi16(r_numvec2, 10)]
-												//		& OKOK197[_mm256_extract_epi16(r_numvec2, 11)]
-												//		& OKOK199[_mm256_extract_epi16(r_numvec2, 12)]
-												//		& OKOK211[_mm256_extract_epi16(r_numvec2, 13)]
-												//		& OKOK223[_mm256_extract_epi16(r_numvec2, 14)]
-												//		& OKOK227[_mm256_extract_epi16(r_numvec2, 15)]))
-				//if (sito &= (OKOK229[REM(n59, 229, 8)]
-
-				if (sito &= (OKOK139[REM(n59, 139, 8)]
-					& OKOK149[REM(n59, 149, 8)]
-					& OKOK151[REM(n59, 151, 8)]
-					& OKOK157[REM(n59, 157, 8)]
-					& OKOK163[REM(n59, 163, 8)]
-					& OKOK167[REM(n59, 167, 8)]
-					& OKOK173[REM(n59, 173, 8)]
-					& OKOK179[REM(n59, 179, 8)]
-					& OKOK181[REM(n59, 181, 8)]
-					& OKOK191[REM(n59, 191, 8)]
-					& OKOK193[REM(n59, 193, 8)]))
-					if (sito &= (OKOK197[REM(n59, 197, 8)]
-						& OKOK199[REM(n59, 199, 8)]
-						& OKOK211[REM(n59, 211, 8)]
-						& OKOK223[REM(n59, 223, 8)]
-						& OKOK227[REM(n59, 227, 8)]
-						& OKOK229[REM(n59, 229, 8)]
-						& OKOK233[REM(n59, 233, 8)]
-						& OKOK239[REM(n59, 239, 8)]
-						& OKOK241[REM(n59, 241, 8)]
-						& OKOK251[REM(n59, 251, 8)]
-						& OKOK257[REM(n59, 257, 9)]))
-						if (sito &= (OKOK263[REM(n59, 263, 9)]
-
-					/*	& OKOK233[REM(n59,233,8)]
+                                                & OKOK137[_mm256_extract_epi16(r_numvec1, 8)])
+								if (sito &= (OKOK139[_mm256_extract_epi16(r_numvec2, 7)]
+												& OKOK149[_mm256_extract_epi16(r_numvec2, 6)]
+												& OKOK151[_mm256_extract_epi16(r_numvec2, 5)]
+												& OKOK157[_mm256_extract_epi16(r_numvec2, 4)]
+												& OKOK163[_mm256_extract_epi16(r_numvec2, 3)]
+												& OKOK167[_mm256_extract_epi16(r_numvec2, 2)]
+												& OKOK173[_mm256_extract_epi16(r_numvec2, 1)]
+												& OKOK179[_mm256_extract_epi16(r_numvec2, 0)]
+												& OKOK181[_mm256_extract_epi16(r_numvec2, 15)]
+												& OKOK191[_mm256_extract_epi16(r_numvec2, 14)]
+												& OKOK193[_mm256_extract_epi16(r_numvec2, 13)]
+												& OKOK197[_mm256_extract_epi16(r_numvec2, 12)]
+												& OKOK199[_mm256_extract_epi16(r_numvec2, 11)]
+												& OKOK211[_mm256_extract_epi16(r_numvec2, 10)]
+												& OKOK223[_mm256_extract_epi16(r_numvec2, 9)]
+												& OKOK227[_mm256_extract_epi16(r_numvec2, 8)]))
+								{
+				if (sito &= (OKOK229[REM(n59, 229, 8)]
+						& OKOK233[REM(n59,233,8)]
 						& OKOK239[REM(n59,239,8)]
 						& OKOK241[REM(n59,241,8)]
 						& OKOK251[REM(n59,251,8)]
-						& OKOK257[REM(n59,257,9)]*/
+						& OKOK257[REM(n59,257,9)]
 						& OKOK263[REM(n59,263,9)]
 						& OKOK269[REM(n59,269,9)]
 						& OKOK271[REM(n59,271,9)]
@@ -265,7 +283,8 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 						& OKOK439[REM(n59,439,9)]
 						& OKOK443[REM(n59,443,9)]
 						& OKOK449[REM(n59,449,9)]
-						& OKOK457[REM(n59,457,9)]))
+						& OKOK457[REM(n59,457,9)]
+						))
 				if(sito&=(OKOK461[REM(n59,461,9)]
 						& OKOK463[REM(n59,463,9)]
 						& OKOK467[REM(n59,467,9)]
@@ -277,7 +296,8 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 						& OKOK509[REM(n59,509,9)]
 						& OKOK521[REM(n59,521,10)]
 						& OKOK523[REM(n59,523,10)]
-						& OKOK541[REM(n59,541,10)]))
+						& OKOK541[REM(n59,541,10)]
+						))
 
 				{
 
@@ -338,7 +358,7 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 							}
 						}
 
-				}
+				} }
 
 
 				n59+=S59;
@@ -347,21 +367,28 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 					n59 -= MOD;
 
 					__m256i cmpb1 = _mm256_cmpgt_epi16(c59vec1, r_numvec1);
+					__m256i cmpb2 = _mm256_cmpgt_epi16(c59vec2, r_numvec2);
 
 					__m256i add1 = vec_sel(a59vec1, a59vec1e, cmpb1);
+					__m256i add2 = vec_sel(a59vec2, a59vec2e, cmpb2);
 
 					r_numvec1 = _mm256_add_epi16(r_numvec1, add1);
+					r_numvec2 = _mm256_add_epi16(r_numvec2, add2);
 				}
 				else
 				{
 					r_numvec1 = _mm256_add_epi16(r_numvec1, svec1);
+					r_numvec2 = _mm256_add_epi16(r_numvec2, svec2);
 				}
 
 				__m256i cmpa1 = _mm256_cmpgt_epi16(r_numvec1, numvec21);
+				__m256i cmpa2 = _mm256_cmpgt_epi16(r_numvec2, numvec22);
 
 				__m256i sub1 = _mm256_sub_epi16(r_numvec1, numvec11);
+				__m256i sub2 = _mm256_sub_epi16(r_numvec2, numvec12);
 
 				r_numvec1 = vec_sel(r_numvec1, sub1, cmpa1);
+				r_numvec2 = vec_sel(r_numvec2, sub2, cmpa2);
 			}     
 
 			n53 += S53;
@@ -370,21 +397,28 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 				n53 -= MOD;
 
 				__m256i cmpb1a = _mm256_cmpgt_epi16(c53vec1, r_numvec1t);
+				__m256i cmpb2a = _mm256_cmpgt_epi16(c53vec2, r_numvec2t);
 
 				__m256i add1a = vec_sel(a53vec1, a53vec1e, cmpb1a);
+				__m256i add2a = vec_sel(a53vec2, a53vec2e, cmpb2a);
 
 				r_numvec1t = _mm256_add_epi16(r_numvec1t, add1a);
+				r_numvec2t = _mm256_add_epi16(r_numvec2t, add2a);
 			}
 			else
 			{
 				r_numvec1t = _mm256_add_epi16(r_numvec1t, s53vec1);
+				r_numvec2t = _mm256_add_epi16(r_numvec2t, s53vec2);
 			}
 
 			__m256i cmpa1a = _mm256_cmpgt_epi16(r_numvec1t, numvec21);
+			__m256i cmpa2a = _mm256_cmpgt_epi16(r_numvec2t, numvec22);
 
 			__m256i sub1a = _mm256_sub_epi16(r_numvec1t, numvec11);
+			__m256i sub2a = _mm256_sub_epi16(r_numvec2t, numvec12);
 
 			r_numvec1t = vec_sel(r_numvec1t, sub1a, cmpa1a);
+			r_numvec2t = vec_sel(r_numvec2t, sub2a, cmpa2a);
 		}
 		n47+=S47;
 		if(n47>=MOD)n47-=MOD;
