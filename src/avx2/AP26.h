@@ -125,9 +125,7 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	 __m256i a53vec2e = _mm256_add_epi16(a53vec2, numvec12);
 
 	// 10 shift
-	//for(SHIFT=startSHIFT+(iter*64); SHIFT<(startSHIFT+640); SHIFT+=64){
-	 #warning "debug only, uncomment up"
-	 for (SHIFT = startSHIFT + (iter * 64); SHIFT<(startSHIFT + 64); SHIFT += 64){
+	for(SHIFT=startSHIFT+(iter*64); SHIFT<(startSHIFT+640); SHIFT+=64){
 
 		time(&start_time);
 
