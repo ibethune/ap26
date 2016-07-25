@@ -387,16 +387,16 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 				{
 
 					int b;
-#if defined(_MSC_VER) && defined(__x86_64__)
 					unsigned long bLimit, bStart;
-
+#if defined(_MSC_VER) && defined(__x86_64__)
 					_BitScanReverse64(&bLimit, sito);
 					_BitScanForward64(&bStart, sito);
 					for (b = bStart; b <= bLimit; b++)
 						if(_bittest64(&sito, b))
 #else
-#warning TODO gcc bit scan
-					for (b = 0; b<64; b++)
+					bLimit = __builtin_clzll(sito);
+					bStart = __builtin_ctzll(sito);
+					for (b = bStart; b <= bLimit; b++)
 						if ((sito >> b) & 1)
 #endif
 						{
