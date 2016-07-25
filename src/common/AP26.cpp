@@ -50,6 +50,7 @@
 
 #ifdef AP26_BOINC
 # include "boinc_api.h"
+# include "version.h"
 # include "filesys.h"
 # ifdef AP26_OPENCL
 #  include "boinc_opencl.h"
@@ -576,7 +577,9 @@ int main(int argc, char *argv[])
 # ifdef AP26_OPENCL
         options.normal_thread_priority = true;    // Raise thread prio to keep GPU fed
 # endif
+# if BOINC_MAJOR_VERSION < 7 || (BOINC_MAJOR_VERSION == 7 && BOINC_MINOR_VERSION < 5)
         options.handle_trickle_ups = true;        // We may periodically report status
+# endif
         boinc_init_options(&options);
 #endif
 
