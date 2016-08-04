@@ -1,22 +1,15 @@
 // Common code to both CPU and OpenCL versions 
 
-
 // AP26 application version
 #define MAJORV 1
-#define MINORV 1
+#define MINORV 2
 #define SUFFIXV "-dev"
 
 #ifdef AP26_OPENCL
 # define TARGET "OpenCL"
 #endif
-#ifdef AP26_SSE2
-# define TARGET "SSE2"
-#endif
-#ifdef AP26_SSE41
-# define TARGET "SSE41"
-#endif
-#ifdef AP26_AVX2
-# define TARGET "AVX2"
+#ifdef AP26_CPU
+# define TARGET "CPU"
 #endif
 
 // Need both of these???
@@ -33,21 +26,6 @@
 #include "CONST.H"
 #include "PrimeQ_x86.h"
 
-#ifdef AP26_SSE2
-# include <time.h>
-# include <emmintrin.h>
-#endif
-
-#ifdef AP26_SSE41
-# include <time.h>
-# include <smmintrin.h>
-#endif
-
-#ifdef AP26_AVX2
-# include <time.h>
-# include <immintrin.h>
-#endif
-
 #ifdef AP26_BOINC
 # include "boinc_api.h"
 # include "version.h"
@@ -55,6 +33,14 @@
 # ifdef AP26_OPENCL
 #  include "boinc_opencl.h"
 # endif
+#endif
+
+#ifdef AP26_CPU
+  // externs
+# include "cpuavx2.h"
+# include "cpuavx.h"
+# include "cpusse41.h"
+# include "cpusse2.h"
 #endif
 
 #ifdef AP26_OPENCL
@@ -81,8 +67,6 @@
 # define GENERIC 0
 #endif
 
-
-
 #ifndef EXIT_SUCCESS
 # define EXIT_SUCCESS 0
 #endif
@@ -90,12 +74,8 @@
 # define EXIT_FAILURE 1
 #endif
 
-
-/***************************
- *
- * Start of compile options.
- *
- ***************************/
+// a bit less than 32bit signed int max
+#define MAXINTV 2000000000
 
 /* File names.
  */
@@ -112,13 +92,6 @@
 #ifndef MINIMUM_AP_LENGTH_TO_REPORT
 # define MINIMUM_AP_LENGTH_TO_REPORT 20
 #endif
-
-/*************************
- *
- * End of compile options.
- *
- *************************/
-
 
 
 /* Global variables */
@@ -249,8 +222,17 @@ static FILE *my_fopen(const char *filename, const char *mode)
 #endif
 }
 
-// a bit less than 32bit signed int max
-#define MAXINTV 2000000000
+
+void Progress(double prog){
+
+#ifdef AP26_BOINC
+	boinc_fraction_done(prog);
+#else
+	printf("progress: %.2f%%\n",prog*100.0);
+#endif
+
+}
+
 
 // Functions to control trickles to the BOINC server
 // Adapted from genefer (http://www.assembla.com/spaces/genefer)
@@ -318,6 +300,8 @@ static void write_hash()
 	unsigned int solhash = result_hash;
 
 	// top 32 bits are workunit range... bottom 32 bits are solutions found
+
+
 	int64_t hash = (int64_t)( (minmax << 32) | solhash);
 
 //	printf("minmax: %llu solhash: %u\ndechash: %lld\n", minmax, solhash, hash);
@@ -480,6 +464,15 @@ void ReportSolution(int AP_Length,int difference,int64_t First_Term)
 
 	int i;
 
+	/* 	hash for BOINC quorum
+		we create a hash based on each AP10+ result mod 1000
+		and that result's AP length  	*/
+	result_hash += First_Term % 1000;
+	result_hash += AP_Length;
+	if(result_hash > MAXINTV){
+		result_hash -= MAXINTV;
+	}
+
 	i = validate_ap26(AP_Length,difference,First_Term);
 
 	if (i < AP_Length){
@@ -528,11 +521,6 @@ void checkpoint(int SHIFT, int K, int force, int ITER)
 {
 	double d;
 
-	if (K_COUNT > 0)
-		d = (double)(K_DONE*10+ITER)/(K_COUNT*10);
-	else
-		d = 1.0;
-
 #ifdef AP26_BOINC
 	if (force || boinc_time_to_checkpoint()){
 #endif
@@ -542,15 +530,23 @@ void checkpoint(int SHIFT, int K, int force, int ITER)
 
 		write_state(KMIN,KMAX,SHIFT,K,ITER);
 
-		printf("Checkpoint: KMIN:%d KMAX:%d SHIFT:%d K:%d ITER:%d (%.2f%%)\n",KMIN,KMAX,SHIFT,K,ITER,d*100.0);
+		printf("Checkpoint: KMIN:%d KMAX:%d SHIFT:%d K:%d ITER:%d\n",KMIN,KMAX,SHIFT,K,ITER);
 
 #ifdef AP26_BOINC
+		handle_trickle_up();
+
 		if (!force)
 			boinc_checkpoint_completed();
 	}
 
-	boinc_fraction_done(d);
-        handle_trickle_up();
+	if(force){
+		if (K_COUNT > 0)
+			d = (double)(K_DONE*10+ITER)/(K_COUNT*10);
+		else
+			d = 1.0;
+
+		boinc_fraction_done(d);
+	}
 #endif
 
 }
@@ -564,7 +560,9 @@ static int will_search(int K)
 }
 
 // Definition of SearchAP26()
+#ifdef AP26_OPENCL
 #include "AP26.h"
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -602,11 +600,31 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
-        // Print out cmd line for diagnostics
+       // Print out cmd line for diagnostics
         fprintf(stderr, "Command line: ");
         for (i = 0; i < argc; i++)
         	fprintf(stderr, "%s ", argv[i]);
         fprintf(stderr, "\n");
+
+#ifdef AP26_CPU
+	int sse41 = __builtin_cpu_supports("sse4.1");
+	int avx = __builtin_cpu_supports("avx");
+	int avx2 = __builtin_cpu_supports("avx2");
+
+	if(avx2){
+		fprintf(stderr, "Detected AVX2 CPU\n");
+	}
+	else if(avx){
+		fprintf(stderr, "Detected AVX CPU\n");
+	}
+	else if(sse41){
+		fprintf(stderr, "Detected SSE4.1 CPU\n");		
+	}
+	else{
+		fprintf(stderr, "Detected SSE2 CPU\n");		
+	}
+
+#endif
 
         /* Check FPU mode and change it to extended precision if necessary. */
 	check_fpu_mode();
@@ -628,6 +646,18 @@ int main(int argc, char *argv[])
 	if (read_state(KMIN,KMAX,SHIFT,&K,&ITER)){
 		printf("Resuming search from checkpoint.\n");
 		fprintf(stderr,"Resuming from checkpoint. K: %d ITER: %d\n",K,ITER);
+#ifdef AP26_CPU
+		if(avx || avx2){
+			if(ITER != 0 && ITER != 4 && ITER != 8){
+				printf("Checkpoint was from a different CPU.. Restarting workunit.\n");	
+				fprintf(stderr,"Checkpoint was from a different CPU.. Restarting workunit.\n");
+				K = KMIN;
+				ITER = 0;
+				result_hash = 0; // zero result hash for BOINC
+				last_trickle = time(NULL); // Start trickle timer
+			}
+		}
+#endif
 	}
 	else{
 		printf("Beginning a new search with parameters from the command line\n");
@@ -768,9 +798,22 @@ int main(int argc, char *argv[])
 
 			checkpoint(SHIFT,K,0,ITER);
 
-                        printf("Starting search... reporting APs of size %d and larger\n", MINIMUM_AP_LENGTH_TO_REPORT);
-
+#ifdef AP26_CPU
+			if(avx2){
+				Search_avx2(K, SHIFT, ITER, K_COUNT, K_DONE);
+			}
+			else if(avx){
+				Search_avx(K, SHIFT, ITER, K_COUNT, K_DONE);
+			}
+			else if(sse41){
+				Search_sse41(K, SHIFT, ITER, K_COUNT, K_DONE);
+			}
+			else{
+				Search_sse2(K, SHIFT, ITER, K_COUNT, K_DONE);
+			}
+#else
                         SearchAP26(K,SHIFT,ITER);
+#endif
 
 			ITER = 0;
 		 	K_DONE++;

@@ -89,8 +89,11 @@ void SearchAP26(int K, int startSHIFT, int ITER)
         size_t local_size[2];
 	int profile=1;
 	int profileq;
-	int iter=ITER;
-	double d;
+	double d = (double)1.0 / (K_COUNT*880);
+	double dd;
+	int iter = ITER;
+	int progress = iter * 88;
+
 	struct timespec proftime, pstime, petime;
 
 	time_t total_start_time, total_finish_time;
@@ -182,7 +185,6 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		time (&start_time);
 
 		int numinq=0;
-		int progress=0;
 
 		// clearok kernel
 		global_size[0]=23744; global_size[1]=1;
@@ -237,9 +239,8 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 				progress++;
 				time (&curr_time);
 				if( ((int)curr_time - (int)last_time) > 1 ){
-					d = (double)(K_DONE*10+iter)/(K_COUNT*10);
-					d += (double)progress/880;
-					boinc_fraction_done(d);
+		    			dd = (double)(K_DONE*880+progress) * d;
+					Progress(dd);
 					last_time = curr_time;
 				}
 
@@ -333,16 +334,6 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		int e=0;
 		while(sol_k_h[e] != 0){
 			ReportSolution(sol_k_h[e],K,sol_val_h[e]);
-
-			/* 	hash for BOINC quorum
-				we create a hash based on each AP10+ result mod 1000
-				and that result's AP length  	*/
-			result_hash += sol_val_h[e] % 1000;
-			result_hash += sol_k_h[e];
-			if(result_hash > MAXINTV){
-				result_hash -= MAXINTV;
-			}
-	
 			e++;
 		}
 
@@ -354,7 +345,9 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		printf("GPU time was %d seconds\n", (int)finish_time - (int)start_time);
 
 		iter++;
-		checkpoint(startSHIFT,K,0,iter);
+		if(iter<10){
+			checkpoint(startSHIFT,K,0,iter);
+		}
 	}
 
 	time(&total_finish_time);

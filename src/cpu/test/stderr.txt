@@ -1,0 +1,5 @@
+20:03:29 (98038): Can't open init data file - running in standalone mode
+AP26 CPU 10-shift search version 1.1-dev by Bryan Little and Iain Bethune
+Compiled Aug  3 2016 with GCC 4.8.5 20150623 (Red Hat 4.8.5-4)
+Command line: ./ap26_cpu_linux64 366384 366384 0 
+Detected AVX CPU
