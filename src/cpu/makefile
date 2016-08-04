@@ -12,7 +12,7 @@ BOINC_LIB = -L$(BOINC_DIR)/lib -L$(BOINC_DIR)/api -L$(BOINC_DIR) -L. -lboinc_api
 
 DFLAGS  = -DAP26_BOINC -DAP26_CPU
 CFLAGS  = -I . -O3 -m64
-LDFLAGS = $(CFLAGS) -static-libgcc
+LDFLAGS = $(CFLAGS) -static
 
 all : $(APP)
 
