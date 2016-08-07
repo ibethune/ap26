@@ -112,7 +112,6 @@ void Search_sse41(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 	int maxshift = startSHIFT+640;
 	int64_t STEP;
 	int64_t n0;
-	int64_t sito;
 	int64_t S31, S37, S41, S43, S47, S53, S59;
 	double d = (double)1.0 / (K_COUNT*425);
 	double dd;
