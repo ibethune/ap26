@@ -1,6 +1,8 @@
-/* sse2
+/* cpusse2.cpp
 
    Modified for SSE2 support 27 September 2009 by Bryan Little
+
+   Count zeros by Sebastian Jaworowicz
 
    See http://www.math.uni.wroc.pl/~jwr/AP26/AP26v3.pdf for information
    about how the algorithm works and for the copyleft notice.

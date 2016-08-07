@@ -1,6 +1,8 @@
-/* SSE4.1
+/* cpusse41.cpp
 
-   Modified for SSE2 support 27 September 2009 by Bryan Little
+   Modified for SSE4.1 support 7 August 2016 by Bryan Little
+
+   Blend and count zeros by Sebastian Jaworowicz
 
    See http://www.math.uni.wroc.pl/~jwr/AP26/AP26v3.pdf for information
    about how the algorithm works and for the copyleft notice.
@@ -29,12 +31,75 @@
   for(j=(_X-23);j<=_X;j++) \
     OK##_X[(j*(STEP%_X))%_X]=0;
 
-#define MAKE_OKOK(_X) \
-  for(j=0;j<_X;j++) \
-    OKOK##_X[j]=0; \
-  for(j=0;j<_X;j++) \
-    for(jj=0;jj<64;jj++) \
-      OKOK##_X[j]|=(((int64_t)OK##_X[(j+(jj+SHIFT)*MOD)%_X])<<jj);
+#define MAKE_OKOKx(_X) \
+  for(j=0;j<_X;j++){ \
+    aOKOK=0; \
+    bOKOK=0; \
+    for(jj=0;jj<64;jj++){ \
+      if(SHIFT < maxshift) \
+        aOKOK|=(((int64_t)OK##_X[(j+(jj+SHIFT)*MOD)%_X])<<jj); \
+      if(SHIFT+64 < maxshift) \
+        bOKOK|=(((int64_t)OK##_X[(j+(jj+SHIFT+64)*MOD)%_X])<<jj); \
+    } \
+    xOKOK##_X[j] = _mm_set_epi64x( aOKOK, bOKOK ); \
+  }
+
+
+void checksito_sse41(int K, int64_t STEP, int64_t n59, int64_t sito, int SHIFT){
+
+	int b;
+	int64_t n;
+	int bLimit, bStart;
+
+	bLimit = 63 - __builtin_clzll(sito);
+	bStart = __builtin_ctzll(sito);
+
+	for (b = bStart; b <= bLimit; b++){
+		if ((sito >> b) & 1)
+		{
+			n=n59+(b+SHIFT)*MOD;
+
+			if(n%7)
+			if(n%11)
+			if(n%13)
+			if(n%17)
+			if(n%19)
+			if(n%23)
+			{
+				int64_t m;
+				int k;
+				k=0; m=n+STEP*5;
+				while(PrimeQ(m)){
+					k++;
+					m+=STEP;
+				}
+
+				if(k>=10){
+					m=n+STEP*4;
+					while(m>0&&PrimeQ(m)){
+						k++;
+						m-=STEP;
+					}
+				}
+
+				if(k>=10)
+				{
+					int64_t first_term = m+STEP;
+					ReportSolution(k,K,first_term);
+				}
+			}
+		}
+	}
+}
+
+int continuesito_sse41(__m128i isito){
+
+	if( _mm_testz_si128(isito,isito) == 0 )
+		return 1;
+
+	return 0;
+
+}
 
 
 
@@ -44,181 +109,184 @@ void Search_sse41(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 	int i43, i47, i53, i59;
 	int i3, i5, i31, i37, i41;
 	int SHIFT;
+	int maxshift = startSHIFT+640;
 	int64_t STEP;
 	int64_t n0;
 	int64_t sito;
 	int64_t S31, S37, S41, S43, S47, S53, S59;
-	double d = (double)1.0 / (K_COUNT*850);
+	double d = (double)1.0 / (K_COUNT*425);
 	double dd;
 	int iter = ITER;
-	int progress = iter * 85;
+	int progress = iter * 42;
 
-	static char OK61[61];
-	static char OK67[67];
-	static char OK71[71];
-	static char OK73[73];
-	static char OK79[79];
-	static char OK83[83];
-	static char OK89[89];
-	static char OK97[97];
-	static char OK101[101];
-	static char OK103[103];
-	static char OK107[107];
-	static char OK109[109];
-	static char OK113[113];
-	static char OK127[127];
-	static char OK131[131];
-	static char OK137[137];
-	static char OK139[139];
-	static char OK149[149];
-	static char OK151[151];
-	static char OK157[157];
-	static char OK163[163];
-	static char OK167[167];
-	static char OK173[173];
-	static char OK179[179];
-	static char OK181[181];
-	static char OK191[191];
-	static char OK193[193];
-	static char OK197[197];
-	static char OK199[199];
-	static char OK211[211];
-	static char OK223[223];
-	static char OK227[227];
-	static char OK229[229];
-	static char OK233[233];
-	static char OK239[239];
-	static char OK241[241];
-	static char OK251[251];
-	static char OK257[257];
-	static char OK263[263];
-	static char OK269[269];
-	static char OK271[271];
-	static char OK277[277];
-	static char OK281[281];
-	static char OK283[283];
-	static char OK293[293];
-	static char OK307[307];
-	static char OK311[311];
-	static char OK313[313];
-	static char OK317[317];
-	static char OK331[331];
-	static char OK337[337];
-	static char OK347[347];
-	static char OK349[349];
-	static char OK353[353];
-	static char OK359[359];
-	static char OK367[367];
-	static char OK373[373];
-	static char OK379[379];
-	static char OK383[383];
-	static char OK389[389];
-	static char OK397[397];
-	static char OK401[401];
-	static char OK409[409];
-	static char OK419[419];
-	static char OK421[421];
-	static char OK431[431];
-	static char OK433[433];
-	static char OK439[439];
-	static char OK443[443];
-	static char OK449[449];
-	static char OK457[457];
-	static char OK461[461];
-	static char OK463[463];
-	static char OK467[467];
-	static char OK479[479];
-	static char OK487[487];
-	static char OK491[491];
-	static char OK499[499];
-	static char OK503[503];
-	static char OK509[509];
-	static char OK521[521];
-	static char OK523[523];
-	static char OK541[541];
-	static int64_t OKOK61[61];
-	static int64_t OKOK67[67];
-	static int64_t OKOK71[71];
-	static int64_t OKOK73[73];
-	static int64_t OKOK79[79];
-	static int64_t OKOK83[83];
-	static int64_t OKOK89[89];
-	static int64_t OKOK97[97];
-	static int64_t OKOK101[101];
-	static int64_t OKOK103[103];
-	static int64_t OKOK107[107];
-	static int64_t OKOK109[109];
-	static int64_t OKOK113[113];
-	static int64_t OKOK127[127];
-	static int64_t OKOK131[131];
-	static int64_t OKOK137[137];
-	static int64_t OKOK139[139];
-	static int64_t OKOK149[149];
-	static int64_t OKOK151[151];
-	static int64_t OKOK157[157];
-	static int64_t OKOK163[163];
-	static int64_t OKOK167[167];
-	static int64_t OKOK173[173];
-	static int64_t OKOK179[179];
-	static int64_t OKOK181[181];
-	static int64_t OKOK191[191];
-	static int64_t OKOK193[193];
-	static int64_t OKOK197[197];
-	static int64_t OKOK199[199];
-	static int64_t OKOK211[211];
-	static int64_t OKOK223[223];
-	static int64_t OKOK227[227];
-	static int64_t OKOK229[229];
-	static int64_t OKOK233[233];
-	static int64_t OKOK239[239];
-	static int64_t OKOK241[241];
-	static int64_t OKOK251[251];
-	static int64_t OKOK257[257];
-	static int64_t OKOK263[263];
-	static int64_t OKOK269[269];
-	static int64_t OKOK271[271];
-	static int64_t OKOK277[277];
-	static int64_t OKOK281[281];
-	static int64_t OKOK283[283];
-	static int64_t OKOK293[293];
-	static int64_t OKOK307[307];
-	static int64_t OKOK311[311];
-	static int64_t OKOK313[313];
-	static int64_t OKOK317[317];
-	static int64_t OKOK331[331];
-	static int64_t OKOK337[337];
-	static int64_t OKOK347[347];
-	static int64_t OKOK349[349];
-	static int64_t OKOK353[353];
-	static int64_t OKOK359[359];
-	static int64_t OKOK367[367];
-	static int64_t OKOK373[373];
-	static int64_t OKOK379[379];
-	static int64_t OKOK383[383];
-	static int64_t OKOK389[389];
-	static int64_t OKOK397[397];
-	static int64_t OKOK401[401];
-	static int64_t OKOK409[409];
-	static int64_t OKOK419[419];
-	static int64_t OKOK421[421];
-	static int64_t OKOK431[431];
-	static int64_t OKOK433[433];
-	static int64_t OKOK439[439];
-	static int64_t OKOK443[443];
-	static int64_t OKOK449[449];
-	static int64_t OKOK457[457];
-	static int64_t OKOK461[461];
-	static int64_t OKOK463[463];
-	static int64_t OKOK467[467];
-	static int64_t OKOK479[479];
-	static int64_t OKOK487[487];
-	static int64_t OKOK491[491];
-	static int64_t OKOK499[499];
-	static int64_t OKOK503[503];
-	static int64_t OKOK509[509];
-	static int64_t OKOK521[521];
-	static int64_t OKOK523[523];
-	static int64_t OKOK541[541];
+	char OK61[61];
+	char OK67[67];
+	char OK71[71];
+	char OK73[73];
+	char OK79[79];
+	char OK83[83];
+	char OK89[89];
+	char OK97[97];
+	char OK101[101];
+	char OK103[103];
+	char OK107[107];
+	char OK109[109];
+	char OK113[113];
+	char OK127[127];
+	char OK131[131];
+	char OK137[137];
+	char OK139[139];
+	char OK149[149];
+	char OK151[151];
+	char OK157[157];
+	char OK163[163];
+	char OK167[167];
+	char OK173[173];
+	char OK179[179];
+	char OK181[181];
+	char OK191[191];
+	char OK193[193];
+	char OK197[197];
+	char OK199[199];
+	char OK211[211];
+	char OK223[223];
+	char OK227[227];
+	char OK229[229];
+	char OK233[233];
+	char OK239[239];
+	char OK241[241];
+	char OK251[251];
+	char OK257[257];
+	char OK263[263];
+	char OK269[269];
+	char OK271[271];
+	char OK277[277];
+	char OK281[281];
+	char OK283[283];
+	char OK293[293];
+	char OK307[307];
+	char OK311[311];
+	char OK313[313];
+	char OK317[317];
+	char OK331[331];
+	char OK337[337];
+	char OK347[347];
+	char OK349[349];
+	char OK353[353];
+	char OK359[359];
+	char OK367[367];
+	char OK373[373];
+	char OK379[379];
+	char OK383[383];
+	char OK389[389];
+	char OK397[397];
+	char OK401[401];
+	char OK409[409];
+	char OK419[419];
+	char OK421[421];
+	char OK431[431];
+	char OK433[433];
+	char OK439[439];
+	char OK443[443];
+	char OK449[449];
+	char OK457[457];
+	char OK461[461];
+	char OK463[463];
+	char OK467[467];
+	char OK479[479];
+	char OK487[487];
+	char OK491[491];
+	char OK499[499];
+	char OK503[503];
+	char OK509[509];
+	char OK521[521];
+	char OK523[523];
+	char OK541[541];
+	static __m128i xOKOK61[61];
+	static __m128i xOKOK67[67];
+	static __m128i xOKOK71[71];
+	static __m128i xOKOK73[73];
+	static __m128i xOKOK79[79];
+	static __m128i xOKOK83[83];
+	static __m128i xOKOK89[89];
+	static __m128i xOKOK97[97];
+	static __m128i xOKOK101[101];
+	static __m128i xOKOK103[103];
+	static __m128i xOKOK107[107];
+	static __m128i xOKOK109[109];
+	static __m128i xOKOK113[113];
+	static __m128i xOKOK127[127];
+	static __m128i xOKOK131[131];
+	static __m128i xOKOK137[137];
+	static __m128i xOKOK139[139];
+	static __m128i xOKOK149[149];
+	static __m128i xOKOK151[151];
+	static __m128i xOKOK157[157];
+	static __m128i xOKOK163[163];
+	static __m128i xOKOK167[167];
+	static __m128i xOKOK173[173];
+	static __m128i xOKOK179[179];
+	static __m128i xOKOK181[181];
+	static __m128i xOKOK191[191];
+	static __m128i xOKOK193[193];
+	static __m128i xOKOK197[197];
+	static __m128i xOKOK199[199];
+	static __m128i xOKOK211[211];
+	static __m128i xOKOK223[223];
+	static __m128i xOKOK227[227];
+	static __m128i xOKOK229[229];
+	static __m128i xOKOK233[233];
+	static __m128i xOKOK239[239];
+	static __m128i xOKOK241[241];
+	static __m128i xOKOK251[251];
+	static __m128i xOKOK257[257];
+	static __m128i xOKOK263[263];
+	static __m128i xOKOK269[269];
+	static __m128i xOKOK271[271];
+	static __m128i xOKOK277[277];
+	static __m128i xOKOK281[281];
+	static __m128i xOKOK283[283];
+	static __m128i xOKOK293[293];
+	static __m128i xOKOK307[307];
+	static __m128i xOKOK311[311];
+	static __m128i xOKOK313[313];
+	static __m128i xOKOK317[317];
+	static __m128i xOKOK331[331];
+	static __m128i xOKOK337[337];
+	static __m128i xOKOK347[347];
+	static __m128i xOKOK349[349];
+	static __m128i xOKOK353[353];
+	static __m128i xOKOK359[359];
+	static __m128i xOKOK367[367];
+	static __m128i xOKOK373[373];
+	static __m128i xOKOK379[379];
+	static __m128i xOKOK383[383];
+	static __m128i xOKOK389[389];
+	static __m128i xOKOK397[397];
+	static __m128i xOKOK401[401];
+	static __m128i xOKOK409[409];
+	static __m128i xOKOK419[419];
+	static __m128i xOKOK421[421];
+	static __m128i xOKOK431[431];
+	static __m128i xOKOK433[433];
+	static __m128i xOKOK439[439];
+	static __m128i xOKOK443[443];
+	static __m128i xOKOK449[449];
+	static __m128i xOKOK457[457];
+	static __m128i xOKOK461[461];
+	static __m128i xOKOK463[463];
+	static __m128i xOKOK467[467];
+	static __m128i xOKOK479[479];
+	static __m128i xOKOK487[487];
+	static __m128i xOKOK491[491];
+	static __m128i xOKOK499[499];
+	static __m128i xOKOK503[503];
+	static __m128i xOKOK509[509];
+	static __m128i xOKOK521[521];
+	static __m128i xOKOK523[523];
+	static __m128i xOKOK541[541];
+
+	int64_t aOKOK,bOKOK;
 
 	time_t start_time, finish_time;
 
@@ -335,94 +403,94 @@ void Search_sse41(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 	MAKE_OK(541);
 		
 	// 10 shift
-	for(SHIFT=startSHIFT+(iter*64); SHIFT<(startSHIFT+640); SHIFT+=64){
+	for(SHIFT=startSHIFT+(iter*64); SHIFT<(startSHIFT+640); SHIFT+=128){
 
 		time (&start_time);
 
 		// init OKOK arrays    
-		MAKE_OKOK(61);
-		MAKE_OKOK(67);
-		MAKE_OKOK(71);
-		MAKE_OKOK(73);
-		MAKE_OKOK(79);
-		MAKE_OKOK(83);
-		MAKE_OKOK(89);
-		MAKE_OKOK(97);
-		MAKE_OKOK(101);
-		MAKE_OKOK(103);
-		MAKE_OKOK(107);
-		MAKE_OKOK(109);
-		MAKE_OKOK(113);
-		MAKE_OKOK(127);
-		MAKE_OKOK(131);
-		MAKE_OKOK(137);
-		MAKE_OKOK(139);
-		MAKE_OKOK(149);
-		MAKE_OKOK(151);
-		MAKE_OKOK(157);
-		MAKE_OKOK(163);
-		MAKE_OKOK(167);
-		MAKE_OKOK(173);
-		MAKE_OKOK(179);
-		MAKE_OKOK(181);
-		MAKE_OKOK(191);
-		MAKE_OKOK(193);
-		MAKE_OKOK(197);
-		MAKE_OKOK(199);
-		MAKE_OKOK(211);
-		MAKE_OKOK(223);
-		MAKE_OKOK(227);
-		MAKE_OKOK(229);
-		MAKE_OKOK(233);
-		MAKE_OKOK(239);
-		MAKE_OKOK(241);
-		MAKE_OKOK(251);
-		MAKE_OKOK(257);
-		MAKE_OKOK(263);
-		MAKE_OKOK(269);
-		MAKE_OKOK(271);
-		MAKE_OKOK(277);
-		MAKE_OKOK(281);
-		MAKE_OKOK(283);
-		MAKE_OKOK(293);
-		MAKE_OKOK(307);
-		MAKE_OKOK(311);
-		MAKE_OKOK(313);
-		MAKE_OKOK(317);
-		MAKE_OKOK(331);
-		MAKE_OKOK(337);
-		MAKE_OKOK(347);
-		MAKE_OKOK(349);
-		MAKE_OKOK(353);
-		MAKE_OKOK(359);
-		MAKE_OKOK(367);
-		MAKE_OKOK(373);
-		MAKE_OKOK(379);
-		MAKE_OKOK(383);
-		MAKE_OKOK(389);
-		MAKE_OKOK(397);
-		MAKE_OKOK(401);
-		MAKE_OKOK(409);
-		MAKE_OKOK(419);
-		MAKE_OKOK(421);
-		MAKE_OKOK(431);
-		MAKE_OKOK(433);
-		MAKE_OKOK(439);
-		MAKE_OKOK(443);
-		MAKE_OKOK(449);
-		MAKE_OKOK(457);
-		MAKE_OKOK(461);
-		MAKE_OKOK(463);
-		MAKE_OKOK(467);
-		MAKE_OKOK(479);
-		MAKE_OKOK(487);
-		MAKE_OKOK(491);
-		MAKE_OKOK(499);
-		MAKE_OKOK(503);
-		MAKE_OKOK(509);
-		MAKE_OKOK(521);
-		MAKE_OKOK(523);
-		MAKE_OKOK(541);
+		MAKE_OKOKx(61);
+		MAKE_OKOKx(67);
+		MAKE_OKOKx(71);
+		MAKE_OKOKx(73);
+		MAKE_OKOKx(79);
+		MAKE_OKOKx(83);
+		MAKE_OKOKx(89);
+		MAKE_OKOKx(97);
+		MAKE_OKOKx(101);
+		MAKE_OKOKx(103);
+		MAKE_OKOKx(107);
+		MAKE_OKOKx(109);
+		MAKE_OKOKx(113);
+		MAKE_OKOKx(127);
+		MAKE_OKOKx(131);
+		MAKE_OKOKx(137);
+		MAKE_OKOKx(139);
+		MAKE_OKOKx(149);
+		MAKE_OKOKx(151);
+		MAKE_OKOKx(157);
+		MAKE_OKOKx(163);
+		MAKE_OKOKx(167);
+		MAKE_OKOKx(173);
+		MAKE_OKOKx(179);
+		MAKE_OKOKx(181);
+		MAKE_OKOKx(191);
+		MAKE_OKOKx(193);
+		MAKE_OKOKx(197);
+		MAKE_OKOKx(199);
+		MAKE_OKOKx(211);
+		MAKE_OKOKx(223);
+		MAKE_OKOKx(227);
+		MAKE_OKOKx(229);
+		MAKE_OKOKx(233);
+		MAKE_OKOKx(239);
+		MAKE_OKOKx(241);
+		MAKE_OKOKx(251);
+		MAKE_OKOKx(257);
+		MAKE_OKOKx(263);
+		MAKE_OKOKx(269);
+		MAKE_OKOKx(271);
+		MAKE_OKOKx(277);
+		MAKE_OKOKx(281);
+		MAKE_OKOKx(283);
+		MAKE_OKOKx(293);
+		MAKE_OKOKx(307);
+		MAKE_OKOKx(311);
+		MAKE_OKOKx(313);
+		MAKE_OKOKx(317);
+		MAKE_OKOKx(331);
+		MAKE_OKOKx(337);
+		MAKE_OKOKx(347);
+		MAKE_OKOKx(349);
+		MAKE_OKOKx(353);
+		MAKE_OKOKx(359);
+		MAKE_OKOKx(367);
+		MAKE_OKOKx(373);
+		MAKE_OKOKx(379);
+		MAKE_OKOKx(383);
+		MAKE_OKOKx(389);
+		MAKE_OKOKx(397);
+		MAKE_OKOKx(401);
+		MAKE_OKOKx(409);
+		MAKE_OKOKx(419);
+		MAKE_OKOKx(421);
+		MAKE_OKOKx(431);
+		MAKE_OKOKx(433);
+		MAKE_OKOKx(439);
+		MAKE_OKOKx(443);
+		MAKE_OKOKx(449);
+		MAKE_OKOKx(457);
+		MAKE_OKOKx(461);
+		MAKE_OKOKx(463);
+		MAKE_OKOKx(467);
+		MAKE_OKOKx(479);
+		MAKE_OKOKx(487);
+		MAKE_OKOKx(491);
+		MAKE_OKOKx(499);
+		MAKE_OKOKx(503);
+		MAKE_OKOKx(509);
+		MAKE_OKOKx(521);
+		MAKE_OKOKx(523);
+		MAKE_OKOKx(541);
 
 		// start searching
 		for(i31=0;i31<7;++i31){
@@ -431,7 +499,7 @@ void Search_sse41(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 		{
 			// 85x
 			progress++;
-    			dd = (double)(K_DONE*850+progress) * d;
+    			dd = (double)(K_DONE*425+progress) * d;
 			Progress(dd);
 
 		for(i41=0;i41<17;++i41)
@@ -458,135 +526,110 @@ void Search_sse41(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 
 			for(i59=(PRIME8-24);i59>0;i59--)
 			{
-				if(sito = OKOK61[_mm_extract_epi16(r_numvec1, 7)]
-						& OKOK67[_mm_extract_epi16(r_numvec1, 6)]
-						& OKOK71[_mm_extract_epi16(r_numvec1, 5)]
-						& OKOK73[_mm_extract_epi16(r_numvec1, 4)]
-						& OKOK79[_mm_extract_epi16(r_numvec1, 3)]
-						& OKOK83[_mm_extract_epi16(r_numvec1, 2)]
-						& OKOK89[_mm_extract_epi16(r_numvec1, 1)]
-						& OKOK97[_mm_extract_epi16(r_numvec1, 0)])
-				if(sito&=(OKOK101[_mm_extract_epi16(r_numvec2, 7)]
-						& OKOK103[_mm_extract_epi16(r_numvec2, 6)]
-						& OKOK107[_mm_extract_epi16(r_numvec2, 5)]
-						& OKOK109[_mm_extract_epi16(r_numvec2, 4)]
-						& OKOK113[_mm_extract_epi16(r_numvec2, 3)]
-						& OKOK127[_mm_extract_epi16(r_numvec2, 2)]
-						& OKOK131[_mm_extract_epi16(r_numvec2, 1)]
-						& OKOK137[_mm_extract_epi16(r_numvec2, 0)]))
-				if(sito&=(OKOK139[REM(n59,139,8)]
-						& OKOK149[REM(n59,149,8)]
-						& OKOK151[REM(n59,151,8)]
-						& OKOK157[REM(n59,157,8)]
-						& OKOK163[REM(n59,163,8)]
-						& OKOK167[REM(n59,167,8)]
-						& OKOK173[REM(n59,173,8)]
-						& OKOK179[REM(n59,179,8)]
-						& OKOK181[REM(n59,181,8)]
-						& OKOK191[REM(n59,191,8)]
-						& OKOK193[REM(n59,193,8)]))
-				if(sito&=(OKOK197[REM(n59,197,8)]
-						& OKOK199[REM(n59,199,8)]
-						& OKOK211[REM(n59,211,8)]
-						& OKOK223[REM(n59,223,8)]
-						& OKOK227[REM(n59,227,8)]
-						& OKOK229[REM(n59,229,8)]
-						& OKOK233[REM(n59,233,8)]
-						& OKOK239[REM(n59,239,8)]
-						& OKOK241[REM(n59,241,8)]
-						& OKOK251[REM(n59,251,8)]
-						& OKOK257[REM(n59,257,9)]))
-				if(sito&=(OKOK263[REM(n59,263,9)]
-						& OKOK269[REM(n59,269,9)]
-						& OKOK271[REM(n59,271,9)]
-						& OKOK277[REM(n59,277,9)]
-						& OKOK281[REM(n59,281,9)]
-						& OKOK283[REM(n59,283,9)]
-						& OKOK293[REM(n59,293,9)]
-						& OKOK307[REM(n59,307,9)]
-						& OKOK311[REM(n59,311,9)]
-						& OKOK313[REM(n59,313,9)]
-						& OKOK317[REM(n59,317,9)]))
-				if(sito&=(OKOK331[REM(n59,331,9)]
-						& OKOK337[REM(n59,337,9)]
-						& OKOK347[REM(n59,347,9)]
-						& OKOK349[REM(n59,349,9)]
-						& OKOK353[REM(n59,353,9)]
-						& OKOK359[REM(n59,359,9)]
-						& OKOK367[REM(n59,367,9)]
-						& OKOK373[REM(n59,373,9)]
-						& OKOK379[REM(n59,379,9)]
-						& OKOK383[REM(n59,383,9)]
-						& OKOK389[REM(n59,389,9)]))
-				if(sito&=(OKOK397[REM(n59,397,9)]
-						& OKOK401[REM(n59,401,9)]
-						& OKOK409[REM(n59,409,9)]
-						& OKOK419[REM(n59,419,9)]
-						& OKOK421[REM(n59,421,9)]
-						& OKOK431[REM(n59,431,9)]
-						& OKOK433[REM(n59,433,9)]
-						& OKOK439[REM(n59,439,9)]
-						& OKOK443[REM(n59,443,9)]
-						& OKOK449[REM(n59,449,9)]
-						& OKOK457[REM(n59,457,9)]))
-				if(sito&=(OKOK461[REM(n59,461,9)]
-						& OKOK463[REM(n59,463,9)]
-						& OKOK467[REM(n59,467,9)]
-						& OKOK479[REM(n59,479,9)]
-						& OKOK487[REM(n59,487,9)]
-						& OKOK491[REM(n59,491,9)]
-						& OKOK499[REM(n59,499,9)]
-						& OKOK503[REM(n59,503,9)]
-						& OKOK509[REM(n59,509,9)]
-						& OKOK521[REM(n59,521,10)]
-						& OKOK523[REM(n59,523,10)]
-						& OKOK541[REM(n59,541,10)]))
+				__m128i isito;
 
-				{
-					int b;
-					int bLimit, bStart;
+				isito = _mm_and_si128( xOKOK61[_mm_extract_epi16(r_numvec1, 7)], xOKOK67[_mm_extract_epi16(r_numvec1, 6)] );
+				isito = _mm_and_si128( isito, xOKOK71[_mm_extract_epi16(r_numvec1, 5)] );
+				isito = _mm_and_si128( isito, xOKOK73[_mm_extract_epi16(r_numvec1, 4)] );
+				isito = _mm_and_si128( isito, xOKOK79[_mm_extract_epi16(r_numvec1, 3)] );
+				isito = _mm_and_si128( isito, xOKOK83[_mm_extract_epi16(r_numvec1, 2)] );
+				isito = _mm_and_si128( isito, xOKOK89[_mm_extract_epi16(r_numvec1, 1)] );
+				isito = _mm_and_si128( isito, xOKOK97[_mm_extract_epi16(r_numvec1, 0)] );
+				isito = _mm_and_si128( isito, xOKOK101[_mm_extract_epi16(r_numvec2, 7)] );
+				isito = _mm_and_si128( isito, xOKOK103[_mm_extract_epi16(r_numvec2, 6)] );
+				isito = _mm_and_si128( isito, xOKOK107[_mm_extract_epi16(r_numvec2, 5)] );
+				isito = _mm_and_si128( isito, xOKOK109[_mm_extract_epi16(r_numvec2, 4)] );
+				isito = _mm_and_si128( isito, xOKOK113[_mm_extract_epi16(r_numvec2, 3)] );
+				isito = _mm_and_si128( isito, xOKOK127[_mm_extract_epi16(r_numvec2, 2)] );
+				isito = _mm_and_si128( isito, xOKOK131[_mm_extract_epi16(r_numvec2, 1)] );
+				isito = _mm_and_si128( isito, xOKOK137[_mm_extract_epi16(r_numvec2, 0)] );
+				if( continuesito_sse41(isito) ){
+					isito = _mm_and_si128( isito, xOKOK139[REM(n59,139,8)] );
+					isito = _mm_and_si128( isito, xOKOK149[REM(n59,149,8)] );
+					isito = _mm_and_si128( isito, xOKOK151[REM(n59,151,8)] );
+					isito = _mm_and_si128( isito, xOKOK157[REM(n59,157,8)] );
+					isito = _mm_and_si128( isito, xOKOK163[REM(n59,163,8)] );
+					isito = _mm_and_si128( isito, xOKOK167[REM(n59,167,8)] );
+					isito = _mm_and_si128( isito, xOKOK173[REM(n59,173,8)] );
+					isito = _mm_and_si128( isito, xOKOK179[REM(n59,179,8)] );
+					isito = _mm_and_si128( isito, xOKOK181[REM(n59,181,8)] );
+					isito = _mm_and_si128( isito, xOKOK191[REM(n59,191,8)] );
+					isito = _mm_and_si128( isito, xOKOK193[REM(n59,193,8)] );
+					isito = _mm_and_si128( isito, xOKOK197[REM(n59,197,8)] );
+				if( continuesito_sse41(isito) ){
+					isito = _mm_and_si128( isito, xOKOK199[REM(n59,199,8)] );
+					isito = _mm_and_si128( isito, xOKOK211[REM(n59,211,8)] );
+					isito = _mm_and_si128( isito, xOKOK223[REM(n59,223,8)] );
+					isito = _mm_and_si128( isito, xOKOK227[REM(n59,227,8)] );
+					isito = _mm_and_si128( isito, xOKOK229[REM(n59,229,8)] );
+					isito = _mm_and_si128( isito, xOKOK233[REM(n59,233,8)] );
+					isito = _mm_and_si128( isito, xOKOK239[REM(n59,239,8)] );
+					isito = _mm_and_si128( isito, xOKOK241[REM(n59,241,8)] );
+					isito = _mm_and_si128( isito, xOKOK251[REM(n59,251,8)] );
+					isito = _mm_and_si128( isito, xOKOK257[REM(n59,257,9)] );
+					isito = _mm_and_si128( isito, xOKOK263[REM(n59,263,9)] );
+					isito = _mm_and_si128( isito, xOKOK269[REM(n59,269,9)] );
+				if( continuesito_sse41(isito) ){
+					isito = _mm_and_si128( isito, xOKOK271[REM(n59,271,9)] );
+					isito = _mm_and_si128( isito, xOKOK277[REM(n59,277,9)] );
+					isito = _mm_and_si128( isito, xOKOK281[REM(n59,281,9)] );
+					isito = _mm_and_si128( isito, xOKOK283[REM(n59,283,9)] );
+					isito = _mm_and_si128( isito, xOKOK293[REM(n59,293,9)] );
+					isito = _mm_and_si128( isito, xOKOK307[REM(n59,307,9)] );
+					isito = _mm_and_si128( isito, xOKOK311[REM(n59,311,9)] );
+					isito = _mm_and_si128( isito, xOKOK313[REM(n59,313,9)] );
+					isito = _mm_and_si128( isito, xOKOK317[REM(n59,317,9)] );
+					isito = _mm_and_si128( isito, xOKOK331[REM(n59,331,9)] );
+					isito = _mm_and_si128( isito, xOKOK337[REM(n59,337,9)] );
+					isito = _mm_and_si128( isito, xOKOK347[REM(n59,347,9)] );
+				if( continuesito_sse41(isito) ){
+					isito = _mm_and_si128( isito, xOKOK349[REM(n59,349,9)] );
+					isito = _mm_and_si128( isito, xOKOK353[REM(n59,353,9)] );
+					isito = _mm_and_si128( isito, xOKOK359[REM(n59,359,9)] );
+					isito = _mm_and_si128( isito, xOKOK367[REM(n59,367,9)] );
+					isito = _mm_and_si128( isito, xOKOK373[REM(n59,373,9)] );
+					isito = _mm_and_si128( isito, xOKOK379[REM(n59,379,9)] );
+					isito = _mm_and_si128( isito, xOKOK383[REM(n59,383,9)] );
+					isito = _mm_and_si128( isito, xOKOK389[REM(n59,389,9)] );
+					isito = _mm_and_si128( isito, xOKOK397[REM(n59,397,9)] );
+					isito = _mm_and_si128( isito, xOKOK401[REM(n59,401,9)] );
+					isito = _mm_and_si128( isito, xOKOK409[REM(n59,409,9)] );
+					isito = _mm_and_si128( isito, xOKOK419[REM(n59,419,9)] );
+				if( continuesito_sse41(isito) ){
+					isito = _mm_and_si128( isito, xOKOK421[REM(n59,421,9)] );
+					isito = _mm_and_si128( isito, xOKOK431[REM(n59,431,9)] );
+					isito = _mm_and_si128( isito, xOKOK433[REM(n59,433,9)] );
+					isito = _mm_and_si128( isito, xOKOK439[REM(n59,439,9)] );
+					isito = _mm_and_si128( isito, xOKOK443[REM(n59,443,9)] );
+					isito = _mm_and_si128( isito, xOKOK449[REM(n59,449,9)] );
+					isito = _mm_and_si128( isito, xOKOK457[REM(n59,457,9)] );
+					isito = _mm_and_si128( isito, xOKOK461[REM(n59,461,9)] );
+					isito = _mm_and_si128( isito, xOKOK463[REM(n59,463,9)] );
+					isito = _mm_and_si128( isito, xOKOK467[REM(n59,467,9)] );
+					isito = _mm_and_si128( isito, xOKOK479[REM(n59,479,9)] );
+					isito = _mm_and_si128( isito, xOKOK487[REM(n59,487,9)] );
+				if( continuesito_sse41(isito) ){
+					isito = _mm_and_si128( isito, xOKOK491[REM(n59,491,9)] );
+					isito = _mm_and_si128( isito, xOKOK499[REM(n59,499,9)] );
+					isito = _mm_and_si128( isito, xOKOK503[REM(n59,503,9)] );
+					isito = _mm_and_si128( isito, xOKOK509[REM(n59,509,9)] );
+					isito = _mm_and_si128( isito, xOKOK521[REM(n59,521,10)] );
+					isito = _mm_and_si128( isito, xOKOK523[REM(n59,523,10)] );
+					isito = _mm_and_si128( isito, xOKOK541[REM(n59,541,10)] );
+				if( continuesito_sse41(isito) ){
 
-					bLimit = 63 - __builtin_clzll(sito);
-					bStart = __builtin_ctzll(sito);
+					int64_t sito0;
+					int64_t sito1;
 
-					for (b = bStart; b <= bLimit; b++){
-						if ((sito >> b) & 1)
-						{
-							n=n59+(b+SHIFT)*MOD;
+					sito0 = _mm_extract_epi64( isito, 1 );
+					sito1 = _mm_extract_epi64( isito, 0 );
 
-							if(n%7)
-							if(n%11)
-							if(n%13)
-							if(n%17)
-							if(n%19)
-							if(n%23)
-							{
-								int64_t m;
-								int k;
-								k=0; m=n+STEP*5;
-								while(PrimeQ(m)){
-									k++;
-									m+=STEP;
-								}
+					if(sito0)
+						checksito_sse41(K, STEP, n59, sito0, SHIFT);
+					if(sito1)
+						checksito_sse41(K, STEP, n59, sito1, SHIFT+64);
 
-								if(k>=10){
-									m=n+STEP*4;
-									while(m>0&&PrimeQ(m)){
-										k++;
-										m-=STEP;
-									}
-								}
-
-								if(k>=10)
-								{
-									int64_t first_term = m+STEP;
-									ReportSolution(k,K,first_term);
-								}
-							}
-						}
-					}
-
-				}
+				}}}}}}}
 
 
 				n59+=S59;
@@ -632,7 +675,7 @@ void Search_sse41(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 		}
 		time(&finish_time);
 		printf("Computation of K: %d SHIFT: %d complete in %d seconds\n", K, SHIFT, (int)finish_time - (int)start_time);
-		iter++;
+		iter+=2;
 		if(iter<10){
 			checkpoint(startSHIFT,K,0,iter);
 		}

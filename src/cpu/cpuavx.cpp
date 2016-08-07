@@ -1,4 +1,4 @@
-/* AP26-boinc.h --
+/* cpuavx.cpp --
 
    Modified for AVX support 29 July 2016 by Bryan Little
 
