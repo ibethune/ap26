@@ -657,7 +657,7 @@ int main(int argc, char *argv[])
 				last_trickle = time(NULL); // Start trickle timer
 			}
 		}
-		if(sse41){
+		else if(sse41){
 			if(ITER != 0 && ITER != 2 && ITER != 4 && ITER != 6 && ITER != 8){
 				printf("Checkpoint was from a different CPU.. Restarting workunit.\n");	
 				fprintf(stderr,"Checkpoint was from a different CPU.. Restarting workunit.\n");
