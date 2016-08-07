@@ -225,6 +225,7 @@ void Search_sse2(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 	static int64_t OKOK541[541];
 
 	time_t start_time, finish_time;
+	time (&start_time);
 
 	STEP=K*PRIM23;
 	n0=(N0*(K%17835)+((N0*17835)%MOD)*(K/17835)+N30)%MOD;
@@ -341,8 +342,6 @@ void Search_sse2(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 		
 	// 10 shift
 	for(SHIFT=startSHIFT+(iter*64); SHIFT<(startSHIFT+640); SHIFT+=64){
-
-		time (&start_time);
 
 		// init OKOK arrays    
 		MAKE_OKOK(61);
@@ -634,14 +633,16 @@ void Search_sse2(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 		}
 		}
 		}
-		time(&finish_time);
-		printf("Computation of K: %d SHIFT: %d complete in %d seconds\n", K, SHIFT, (int)finish_time - (int)start_time);
+
 		iter++;
 		if(iter<10){
 			checkpoint(startSHIFT,K,0,iter);
 		}		
 
 	}
+
+	time(&finish_time);
+	printf("Computation of K: %d complete in %d seconds\n", K, (int)finish_time - (int)start_time);
 
 
 
