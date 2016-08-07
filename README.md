@@ -35,12 +35,12 @@
 
 ## Compiling
 
-   Makefiles are provided in the sse2 and opencl directories for Windows, Linux and Mac OS.
+   Makefiles are provided in the cpu and opencl directories for Windows, Linux and Mac OS.
 
    Compilation is controlled by the following preprocessor #defines:
 
 *   -DAP26_BOINC  : Build with the BOINC library
-*   -DAP26_SSE2   : Build for SSE2 CPUs (64 bit)
+*   -DAP26_CPU   : Build for CPUs (64 bit)
 *   -DAP26_OPENCL : Build for GPUs using OpenCL
 
 ## Testing the executable:
