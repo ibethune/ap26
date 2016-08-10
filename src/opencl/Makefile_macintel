@@ -11,7 +11,7 @@ KERNEL_HEADERS = kernels/checkn.h kernels/setok.h kernels/clearok.h kernels/clea
 OBJ = AP26.o simpleCL.o
 
 BOINC_DIR = ../../../boinc_707
-BOINC_INC = -I$(BOINC_DIR)/api -I$(BOINC_DIR)/lib
+BOINC_INC = -I$(BOINC_DIR)/api -I$(BOINC_DIR)/lib -I$(BOINC_DIR)
 BOINC_LIB = -L$(BOINC_DIR)/mac_build/build/Deployment/ -lboinc -lboinc_api -lboinc_opencl -lstdc++
 
 DFLAGS  = -DAP26_BOINC -DAP26_OPENCL

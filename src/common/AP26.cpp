@@ -621,7 +621,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Detected SSE4.1 CPU\n");		
 	}
 	else{
-		fprintf(stderr, "Detected SSE2 CPU\n");		
+		fprintf(stderr, "Assumed SSE2 CPU\n");
 	}
 
 #endif
