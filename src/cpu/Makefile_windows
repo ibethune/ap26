@@ -17,22 +17,22 @@ LDFLAGS = $(CFLAGS) -static
 all : $(APP)
 
 $(APP) : $(OBJ)
-	$(LD) $(LDFLAGS) $^ $(BOINC_LIB) -o $@
+	$(LD) $(LDFLAGS) $^ $(BOINC_LIB) -o $@ 
 
 AP26.o : $(SRC)
-	$(CC) $(DFLAGS) $(CFLAGS) $(BOINC_INC) -c $@ ../common/AP26.cpp
+	$(CC) $(DFLAGS) $(CFLAGS) $(BOINC_INC) -c -o $@ ../common/AP26.cpp
 
 cpuavx2.o : cpuavx2.cpp
-	$(CC) $(DFLAGS) $(CFLAGS) -mavx2 -c cpuavx2.cpp
+	$(CC) $(DFLAGS) $(CFLAGS) -mavx2 -c -o $@ $^
 
 cpuavx.o : cpuavx.cpp
-	$(CC) $(DFLAGS) $(CFLAGS) -mavx -c cpuavx.cpp
+	$(CC) $(DFLAGS) $(CFLAGS) -mavx -c -o $@ $^
 
 cpusse41.o : cpusse41.cpp
-	$(CC) $(DFLAGS) $(CFLAGS) -msse4.1 -c cpusse41.cpp
+	$(CC) $(DFLAGS) $(CFLAGS) -msse4.1 -c -o $@ $^
 
 cpusse2.o : cpusse2.cpp
-	$(CC) $(DFLAGS) $(CFLAGS) -msse2 -c cpusse2.cpp
+	$(CC) $(DFLAGS) $(CFLAGS) -msse2 -c -o $@ $^
 
 clean :
 	rm -f *.o $(APP)
