@@ -45,7 +45,7 @@
 
 #ifdef AP26_OPENCL
 # include "simpleCL.h"
-// ocl kernels converted with xxd
+// ocl kernels
 # include "checkn.h"
 # include "clearok.h"
 # include "clearsol.h"
@@ -606,6 +606,25 @@ int main(int argc, char *argv[])
         	fprintf(stderr, "%s ", argv[i]);
         fprintf(stderr, "\n");
 
+        /* Check FPU mode and change it to extended precision if necessary. */
+	check_fpu_mode();
+
+	/* Get search parameters from command line */
+	if(argc < 4){
+#ifdef AP26_CPU
+		printf("Usage: %s KMIN KMAX SHIFT -cputype\n",argv[0]);
+		printf("cputype is optional. Valid types are: -sse2 -sse41 -avx -avx2\n");
+#endif
+#ifdef AP26_OPENCL
+		printf("Usage: %s KMIN KMAX SHIFT\n",argv[0]);
+#endif
+		exit(EXIT_FAILURE);
+	}
+
+	sscanf(argv[1],"%d",&KMIN);
+	sscanf(argv[2],"%d",&KMAX);
+	sscanf(argv[3],"%d",&SHIFT);
+
 #ifdef AP26_CPU
 	int sse41 = __builtin_cpu_supports("sse4.1");
 	int avx = __builtin_cpu_supports("avx");
@@ -624,23 +643,6 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Assumed SSE2 CPU\n");
 	}
 
-#endif
-
-        /* Check FPU mode and change it to extended precision if necessary. */
-	check_fpu_mode();
-
-	/* Get search parameters from command line */
-	if(argc < 4){
-		printf("Usage: %s KMIN KMAX SHIFT -cputype\n",argv[0]);
-		printf("cputype is optional. Valid types are: -sse2 -sse41 -avx -avx2\n");
-		exit(EXIT_FAILURE);
-	}
-
-	sscanf(argv[1],"%d",&KMIN);
-	sscanf(argv[2],"%d",&KMAX);
-	sscanf(argv[3],"%d",&SHIFT);
-
-#ifdef AP26_CPU
 	if(argc == 5){
 		if( strcmp(argv[4], "-sse2") == 0 ){
 			printf("forcing SSE2 mode\n");
