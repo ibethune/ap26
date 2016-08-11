@@ -630,16 +630,56 @@ int main(int argc, char *argv[])
 	check_fpu_mode();
 
 	/* Get search parameters from command line */
-	// ignore argc 5 and 6 (depreciated --device #)
-	if (argc == 4 || argc == 6){
-		sscanf(argv[1],"%d",&KMIN);
-		sscanf(argv[2],"%d",&KMAX);
-		sscanf(argv[3],"%d",&SHIFT);
-	}
-	else{
-		fprintf(stderr,"Usage: %s [KMIN KMAX SHIFT]\n",argv[0]);
+	if(argc < 4){
+		printf("Usage: %s KMIN KMAX SHIFT -cputype\n",argv[0]);
+		printf("cputype is optional. Valid types are: -sse2 -sse41 -avx -avx2\n");
 		exit(EXIT_FAILURE);
 	}
+
+	sscanf(argv[1],"%d",&KMIN);
+	sscanf(argv[2],"%d",&KMAX);
+	sscanf(argv[3],"%d",&SHIFT);
+
+#ifdef AP26_CPU
+	if(argc == 5){
+		if( strcmp(argv[4], "-sse2") == 0 ){
+			printf("forcing SSE2 mode\n");
+			sse41 = 0;
+			avx = 0;
+			avx2 = 0;
+		}
+		else if( strcmp(argv[4], "-sse41") == 0 ){
+			printf("forcing SSE4.1 mode\n");
+			if(sse41 == 0){
+				printf("ERROR: CPU does not support SSE4.1 instructions!\n");
+				exit(EXIT_FAILURE);
+			}
+			sse41 = 1;
+			avx = 0;
+			avx2 = 0;
+		}
+		else if( strcmp(argv[4], "-avx") == 0 ){
+			printf("forcing AVX mode\n");
+			if(avx == 0){
+				printf("ERROR: CPU does not support AVX instructions!\n");
+				exit(EXIT_FAILURE);
+			}
+			sse41 = 0;
+			avx = 1;
+			avx2 = 0;
+		}
+		else if( strcmp(argv[4], "-avx2") == 0 ){
+			printf("forcing AVX2 mode\n");
+			if(avx2 == 0){
+				printf("ERROR: CPU does not support AVX2 instructions!\n");
+				exit(EXIT_FAILURE);
+			}
+			sse41 = 0;
+			avx = 0;
+			avx2 = 1;
+		}
+	}
+#endif
 
 
 	/* Resume from checkpoint if there is one */
