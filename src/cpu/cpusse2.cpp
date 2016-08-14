@@ -1,6 +1,7 @@
 /* cpusse2.cpp
 
-   Modified for SSE2 support 27 September 2009 by Bryan Little
+   SSE2 support 27 September 2009 by Bryan Little
+   Sieve arrays sized to fit in 256kbyte L2 cache
 
    Count zeros by Sebastian Jaworowicz
 
@@ -57,6 +58,7 @@ void Search_sse2(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 	int iter = ITER;
 	int progress = iter * 85;
 
+	// char arrays total 23693 bytes
 	static char OK61[61];
 	static char OK67[67];
 	static char OK71[71];
@@ -140,6 +142,7 @@ void Search_sse2(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 	static char OK521[521];
 	static char OK523[523];
 	static char OK541[541];
+	// int64 arrays total 189544 bytes
 	static int64_t OKOK61[61];
 	static int64_t OKOK67[67];
 	static int64_t OKOK71[71];
@@ -305,7 +308,6 @@ void Search_sse2(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 	MAKE_OK(313);
 	MAKE_OK(317);
 	MAKE_OK(331);
-
 	MAKE_OK(337);
 	MAKE_OK(347);
 	MAKE_OK(349);
@@ -629,6 +631,7 @@ void Search_sse2(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 		n43+=S43;
 		if(n43>=MOD)n43-=MOD;
 		}
+
 		}
 		}
 		}

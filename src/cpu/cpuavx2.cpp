@@ -1,6 +1,10 @@
 /* cpuavx2.cpp --
 
-   Modified for AVX2 support 30 July 2016 by Bryan Little
+   AVX2 support 30 July 2016 by Bryan Little
+   Sieve arrays sized to fit in 256kbyte L2 cache
+
+   Floating point bitwise AND is faster than integer.
+   Probably because integer units are calculating the array index.
 
    Blend and count zeros by Sebastian Jaworowicz
 
@@ -10,7 +14,6 @@
 
 #define __STDC_FORMAT_MACROS
 #define __STDC_CONSTANT_MACROS
-
 
 #include <x86intrin.h>
 #include <stdio.h>
@@ -22,7 +25,6 @@
 
 #include "cpuconst.h"
 #include "cpuavx2.h"
-
 
 //  255 progress per K
 
@@ -53,60 +55,13 @@
       if(SHIFT+192 < maxshift) \
         dOKOK|=(((int64_t)OK##_X[(j+(jj+SHIFT+192)*MOD)%_X])<<jj); \
     } \
-    xOKOK##_X[j] = _mm256_set_epi64x( aOKOK, bOKOK, cOKOK, dOKOK); \
+    xOKOK##_X[j] = _mm256_castsi256_pd ( _mm256_set_epi64x( aOKOK, bOKOK, cOKOK, dOKOK) ); \
   }
 
 
-void checksito_avx2(int K, int64_t STEP, int64_t n59, int64_t sito, int SHIFT){
+int continuesito_avx2(__m256d dsito){
 
-	int b;
-	int64_t n;
-	int bLimit, bStart;
-
-	bLimit = 63 - __builtin_clzll(sito);
-	bStart = __builtin_ctzll(sito);
-
-	for (b = bStart; b <= bLimit; b++){
-		if ((sito >> b) & 1)
-		{
-			n=n59+(b+SHIFT)*MOD;
-
-			if(n%7)
-			if(n%11)
-			if(n%13)
-			if(n%17)
-			if(n%19)
-			if(n%23)
-			{
-				int64_t m;
-				int k;
-				k=0; m=n+STEP*5;
-				while(PrimeQ(m)){
-					k++;
-					m+=STEP;
-				}
-
-				if(k>=10){
-					m=n+STEP*4;
-					while(m>0&&PrimeQ(m)){
-						k++;
-						m-=STEP;
-					}
-				}
-
-				if(k>=10)
-				{
-					int64_t first_term = m+STEP;
-					ReportSolution(k,K,first_term);
-				}
-			}
-		}
-	}
-}
-
-int continuesito_avx2(__m256i isito){
-
-	if( _mm256_testz_si256(isito,isito) == 0 )
+	if( _mm256_testz_si256(_mm256_castpd_si256(dsito), _mm256_castpd_si256(dsito)) == 0 )
 		return 1;
 
 	return 0;
@@ -128,177 +83,138 @@ void Search_avx2(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 	double dd;
 	int iter = ITER;
 	int progress = iter * 21;
-
-	static __m256i xOKOK61[61];
-	static __m256i xOKOK67[67];
-	static __m256i xOKOK71[71];
-	static __m256i xOKOK73[73];
-	static __m256i xOKOK79[79];
-	static __m256i xOKOK83[83];
-	static __m256i xOKOK89[89];
-	static __m256i xOKOK97[97];
-	static __m256i xOKOK101[101];
-	static __m256i xOKOK103[103];
-	static __m256i xOKOK107[107];
-	static __m256i xOKOK109[109];
-	static __m256i xOKOK113[113];
-	static __m256i xOKOK127[127];
-	static __m256i xOKOK131[131];
-	static __m256i xOKOK137[137];
-	static __m256i xOKOK139[139];
-	static __m256i xOKOK149[149];
-	static __m256i xOKOK151[151];
-	static __m256i xOKOK157[157];
-	static __m256i xOKOK163[163];
-	static __m256i xOKOK167[167];
-	static __m256i xOKOK173[173];
-	static __m256i xOKOK179[179];
-	static __m256i xOKOK181[181];
-	static __m256i xOKOK191[191];
-	static __m256i xOKOK193[193];
-	static __m256i xOKOK197[197];
-	static __m256i xOKOK199[199];
-	static __m256i xOKOK211[211];
-	static __m256i xOKOK223[223];
-	static __m256i xOKOK227[227];
-	static __m256i xOKOK229[229];
-	static __m256i xOKOK233[233];
-	static __m256i xOKOK239[239];
-	static __m256i xOKOK241[241];
-	static __m256i xOKOK251[251];
-	static __m256i xOKOK257[257];
-	static __m256i xOKOK263[263];
-	static __m256i xOKOK269[269];
-	static __m256i xOKOK271[271];
-	static __m256i xOKOK277[277];
-	static __m256i xOKOK281[281];
-	static __m256i xOKOK283[283];
-	static __m256i xOKOK293[293];
-	static __m256i xOKOK307[307];
-	static __m256i xOKOK311[311];
-	static __m256i xOKOK313[313];
-	static __m256i xOKOK317[317];
-	static __m256i xOKOK331[331];
-	static __m256i xOKOK337[337];
-	static __m256i xOKOK347[347];
-	static __m256i xOKOK349[349];
-	static __m256i xOKOK353[353];
-	static __m256i xOKOK359[359];
-	static __m256i xOKOK367[367];
-	static __m256i xOKOK373[373];
-	static __m256i xOKOK379[379];
-	static __m256i xOKOK383[383];
-	static __m256i xOKOK389[389];
-	static __m256i xOKOK397[397];
-	static __m256i xOKOK401[401];
-	static __m256i xOKOK409[409];
-	static __m256i xOKOK419[419];
-	static __m256i xOKOK421[421];
-	static __m256i xOKOK431[431];
-	static __m256i xOKOK433[433];
-	static __m256i xOKOK439[439];
-	static __m256i xOKOK443[443];
-	static __m256i xOKOK449[449];
-	static __m256i xOKOK457[457];
-	static __m256i xOKOK461[461];
-	static __m256i xOKOK463[463];
-	static __m256i xOKOK467[467];
-	static __m256i xOKOK479[479];
-	static __m256i xOKOK487[487];
-	static __m256i xOKOK491[491];
-	static __m256i xOKOK499[499];
-	static __m256i xOKOK503[503];
-	static __m256i xOKOK509[509];
-	static __m256i xOKOK521[521];
-	static __m256i xOKOK523[523];
-	static __m256i xOKOK541[541];
-
 	int j,jj;
-	char OK61[61];
-	char OK67[67];
-	char OK71[71];
-	char OK73[73];
-	char OK79[79];
-	char OK83[83];
-	char OK89[89];
-	char OK97[97];
-	char OK101[101];
-	char OK103[103];
-	char OK107[107];
-	char OK109[109];
-	char OK113[113];
-	char OK127[127];
-	char OK131[131];
-	char OK137[137];
-	char OK139[139];
-	char OK149[149];
-	char OK151[151];
-	char OK157[157];
-	char OK163[163];
-	char OK167[167];
-	char OK173[173];
-	char OK179[179];
-	char OK181[181];
-	char OK191[191];
-	char OK193[193];
-	char OK197[197];
-	char OK199[199];
-	char OK211[211];
-	char OK223[223];
-	char OK227[227];
-	char OK229[229];
-	char OK233[233];
-	char OK239[239];
-	char OK241[241];
-	char OK251[251];
-	char OK257[257];
-	char OK263[263];
-	char OK269[269];
-	char OK271[271];
-	char OK277[277];
-	char OK281[281];
-	char OK283[283];
-	char OK293[293];
-	char OK307[307];
-	char OK311[311];
-	char OK313[313];
-	char OK317[317];
-	char OK331[331];
-	char OK337[337];
-	char OK347[347];
-	char OK349[349];
-	char OK353[353];
-	char OK359[359];
-	char OK367[367];
-	char OK373[373];
-	char OK379[379];
-	char OK383[383];
-	char OK389[389];
-	char OK397[397];
-	char OK401[401];
-	char OK409[409];
-	char OK419[419];
-	char OK421[421];
-	char OK431[431];
-	char OK433[433];
-	char OK439[439];
-	char OK443[443];
-	char OK449[449];
-	char OK457[457];
-	char OK461[461];
-	char OK463[463];
-	char OK467[467];
-	char OK479[479];
-	char OK487[487];
-	char OK491[491];
-	char OK499[499];
-	char OK503[503];
-	char OK509[509];
-	char OK521[521];
-	char OK523[523];
-	char OK541[541];
+
+	// char arrays total 23693 bytes
+	static char OK61[61];
+	static char OK67[67];
+	static char OK71[71];
+	static char OK73[73];
+	static char OK79[79];
+	static char OK83[83];
+	static char OK89[89];
+	static char OK97[97];
+	static char OK101[101];
+	static char OK103[103];
+	static char OK107[107];
+	static char OK109[109];
+	static char OK113[113];
+	static char OK127[127];
+	static char OK131[131];
+	static char OK137[137];
+	static char OK139[139];
+	static char OK149[149];
+	static char OK151[151];
+	static char OK157[157];
+	static char OK163[163];
+	static char OK167[167];
+	static char OK173[173];
+	static char OK179[179];
+	static char OK181[181];
+	static char OK191[191];
+	static char OK193[193];
+	static char OK197[197];
+	static char OK199[199];
+	static char OK211[211];
+	static char OK223[223];
+	static char OK227[227];
+	static char OK229[229];
+	static char OK233[233];
+	static char OK239[239];
+	static char OK241[241];
+	static char OK251[251];
+	static char OK257[257];
+	static char OK263[263];
+	static char OK269[269];
+	static char OK271[271];
+	static char OK277[277];
+	static char OK281[281];
+	static char OK283[283];
+	static char OK293[293];
+	static char OK307[307];
+	static char OK311[311];
+	static char OK313[313];
+	static char OK317[317];
+	static char OK331[331];
+	static char OK337[337];
+	static char OK347[347];
+	static char OK349[349];
+	static char OK353[353];
+	static char OK359[359];
+	static char OK367[367];
+	static char OK373[373];
+	static char OK379[379];
+	static char OK383[383];
+	static char OK389[389];
+	static char OK397[397];
+	static char OK401[401];
+	static char OK409[409];
+	static char OK419[419];
+	static char OK421[421];
+	static char OK431[431];
+	static char OK433[433];
+	static char OK439[439];
+	static char OK443[443];
+	static char OK449[449];
+	static char OK457[457];
+	static char OK461[461];
+	static char OK463[463];
+	static char OK467[467];
+	static char OK479[479];
+	static char OK487[487];
+	static char OK491[491];
+	static char OK499[499];
+	static char OK503[503];
+	static char OK509[509];
+	static char OK521[521];
+	static char OK523[523];
+	static char OK541[541];
+	// m256 arrays total 223296 bytes
+	static __m256d xOKOK61[61];
+	static __m256d xOKOK67[67];
+	static __m256d xOKOK71[71];
+	static __m256d xOKOK73[73];
+	static __m256d xOKOK79[79];
+	static __m256d xOKOK83[83];
+	static __m256d xOKOK89[89];
+	static __m256d xOKOK97[97];
+	static __m256d xOKOK101[101];
+	static __m256d xOKOK103[103];
+	static __m256d xOKOK107[107];
+	static __m256d xOKOK109[109];
+	static __m256d xOKOK113[113];
+	static __m256d xOKOK127[127];
+	static __m256d xOKOK131[131];
+	static __m256d xOKOK137[137];
+	static __m256d xOKOK139[139];
+	static __m256d xOKOK149[149];
+	static __m256d xOKOK151[151];
+	static __m256d xOKOK157[157];
+	static __m256d xOKOK163[163];
+	static __m256d xOKOK167[167];
+	static __m256d xOKOK173[173];
+	static __m256d xOKOK179[179];
+	static __m256d xOKOK181[181];
+	static __m256d xOKOK191[191];
+	static __m256d xOKOK193[193];
+	static __m256d xOKOK197[197];
+	static __m256d xOKOK199[199];
+	static __m256d xOKOK211[211];
+	static __m256d xOKOK223[223];
+	static __m256d xOKOK227[227];
+	static __m256d xOKOK229[229];
+	static __m256d xOKOK233[233];
+	static __m256d xOKOK239[239];
+	static __m256d xOKOK241[241];
+	static __m256d xOKOK251[251];
+	static __m256d xOKOK257[257];
+	static __m256d xOKOK263[263];
+	static __m256d xOKOK269[269];
+	static __m256d xOKOK271[271];
+	static __m256d xOKOK277[277];
 
 	int64_t aOKOK,bOKOK,cOKOK,dOKOK;
+
 
 	time_t start_time, finish_time;
 
@@ -407,6 +323,7 @@ void Search_avx2(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 	MAKE_OK(487);
 	MAKE_OK(491);
 	MAKE_OK(499);
+
 	MAKE_OK(503);
 	MAKE_OK(509);
 	MAKE_OK(521);
@@ -416,7 +333,6 @@ void Search_avx2(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 	// 10 shift
 	for(SHIFT=startSHIFT+(iter*64); SHIFT<maxshift; SHIFT+=256){
 
-		// init OKOK arrays    
 		MAKE_OKOKx(61);
 		MAKE_OKOKx(67);
 		MAKE_OKOKx(71);
@@ -459,47 +375,6 @@ void Search_avx2(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 		MAKE_OKOKx(269);
 		MAKE_OKOKx(271);
 		MAKE_OKOKx(277);
-		MAKE_OKOKx(281);
-		MAKE_OKOKx(283);
-		MAKE_OKOKx(293);
-		MAKE_OKOKx(307);
-		MAKE_OKOKx(311);
-		MAKE_OKOKx(313);
-		MAKE_OKOKx(317);
-		MAKE_OKOKx(331);
-		MAKE_OKOKx(337);
-		MAKE_OKOKx(347);
-		MAKE_OKOKx(349);
-		MAKE_OKOKx(353);
-		MAKE_OKOKx(359);
-		MAKE_OKOKx(367);
-		MAKE_OKOKx(373);
-		MAKE_OKOKx(379);
-		MAKE_OKOKx(383);
-		MAKE_OKOKx(389);
-		MAKE_OKOKx(397);
-		MAKE_OKOKx(401);
-		MAKE_OKOKx(409);
-		MAKE_OKOKx(419);
-		MAKE_OKOKx(421);
-		MAKE_OKOKx(431);
-		MAKE_OKOKx(433);
-		MAKE_OKOKx(439);
-		MAKE_OKOKx(443);
-		MAKE_OKOKx(449);
-		MAKE_OKOKx(457);
-		MAKE_OKOKx(461);
-		MAKE_OKOKx(463);
-		MAKE_OKOKx(467);
-		MAKE_OKOKx(479);
-		MAKE_OKOKx(487);
-		MAKE_OKOKx(491);
-		MAKE_OKOKx(499);
-		MAKE_OKOKx(503);
-		MAKE_OKOKx(509);
-		MAKE_OKOKx(521);
-		MAKE_OKOKx(523);
-		MAKE_OKOKx(541);
 
 		// start searching
 		for(i31=0;i31<7;++i31)
@@ -527,7 +402,7 @@ void Search_avx2(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 		n53=n47;
 		for(i53=(PRIME7-24);i53>0;i53--)
 		{
-			n59=n53;
+		n59=n53;
 
 			__m256i rvec = _mm256_set_epi16(REM(n59,61,6), REM(n59,67,7), REM(n59,71,7), REM(n59,73,7), REM(n59,79,7), REM(n59,83,7), REM(n59,89,7), REM(n59,97,7),
 					REM(n59,101,7), REM(n59,103,7), REM(n59,107,7), REM(n59,109,7), REM(n59,113,7), REM(n59,127,7), REM(n59,131,8), REM(n59,137,8));
@@ -535,118 +410,414 @@ void Search_avx2(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 			for(i59=(PRIME8-24);i59>0;i59--)
 			{
 
-				__m256i isito;
+				__m256d dsito;
 
-				isito = _mm256_and_si256( xOKOK61[_mm256_extract_epi16(rvec, 15)], xOKOK67[_mm256_extract_epi16(rvec, 14)] );
-				isito = _mm256_and_si256( isito, xOKOK71[_mm256_extract_epi16(rvec, 13)] );
-				isito = _mm256_and_si256( isito, xOKOK73[_mm256_extract_epi16(rvec, 12)] );
-				isito = _mm256_and_si256( isito, xOKOK79[_mm256_extract_epi16(rvec, 11)] );
-				isito = _mm256_and_si256( isito, xOKOK83[_mm256_extract_epi16(rvec, 10)] );
-				isito = _mm256_and_si256( isito, xOKOK89[_mm256_extract_epi16(rvec, 9)] );
-				isito = _mm256_and_si256( isito, xOKOK97[_mm256_extract_epi16(rvec, 8)] );
-				isito = _mm256_and_si256( isito, xOKOK101[_mm256_extract_epi16(rvec, 7)] );
-				isito = _mm256_and_si256( isito, xOKOK103[_mm256_extract_epi16(rvec, 6)] );
-				isito = _mm256_and_si256( isito, xOKOK107[_mm256_extract_epi16(rvec, 5)] );
-				isito = _mm256_and_si256( isito, xOKOK109[_mm256_extract_epi16(rvec, 4)] );
-				isito = _mm256_and_si256( isito, xOKOK113[_mm256_extract_epi16(rvec, 3)] );
-				isito = _mm256_and_si256( isito, xOKOK127[_mm256_extract_epi16(rvec, 2)] );
-				isito = _mm256_and_si256( isito, xOKOK131[_mm256_extract_epi16(rvec, 1)] );
-				isito = _mm256_and_si256( isito, xOKOK137[_mm256_extract_epi16(rvec, 0)] );
-				if( continuesito_avx2(isito) ){
-					isito = _mm256_and_si256( isito, xOKOK139[REM(n59,139,8)] );
-					isito = _mm256_and_si256( isito, xOKOK149[REM(n59,149,8)] );
-					isito = _mm256_and_si256( isito, xOKOK151[REM(n59,151,8)] );
-					isito = _mm256_and_si256( isito, xOKOK157[REM(n59,157,8)] );
-					isito = _mm256_and_si256( isito, xOKOK163[REM(n59,163,8)] );
-					isito = _mm256_and_si256( isito, xOKOK167[REM(n59,167,8)] );
-					isito = _mm256_and_si256( isito, xOKOK173[REM(n59,173,8)] );
-					isito = _mm256_and_si256( isito, xOKOK179[REM(n59,179,8)] );
-					isito = _mm256_and_si256( isito, xOKOK181[REM(n59,181,8)] );
-					isito = _mm256_and_si256( isito, xOKOK191[REM(n59,191,8)] );
-					isito = _mm256_and_si256( isito, xOKOK193[REM(n59,193,8)] );
-					isito = _mm256_and_si256( isito, xOKOK197[REM(n59,197,8)] );
-				if( continuesito_avx2(isito) ){
-					isito = _mm256_and_si256( isito, xOKOK199[REM(n59,199,8)] );
-					isito = _mm256_and_si256( isito, xOKOK211[REM(n59,211,8)] );
-					isito = _mm256_and_si256( isito, xOKOK223[REM(n59,223,8)] );
-					isito = _mm256_and_si256( isito, xOKOK227[REM(n59,227,8)] );
-					isito = _mm256_and_si256( isito, xOKOK229[REM(n59,229,8)] );
-					isito = _mm256_and_si256( isito, xOKOK233[REM(n59,233,8)] );
-					isito = _mm256_and_si256( isito, xOKOK239[REM(n59,239,8)] );
-					isito = _mm256_and_si256( isito, xOKOK241[REM(n59,241,8)] );
-					isito = _mm256_and_si256( isito, xOKOK251[REM(n59,251,8)] );
-					isito = _mm256_and_si256( isito, xOKOK257[REM(n59,257,9)] );
-					isito = _mm256_and_si256( isito, xOKOK263[REM(n59,263,9)] );
-					isito = _mm256_and_si256( isito, xOKOK269[REM(n59,269,9)] );
-				if( continuesito_avx2(isito) ){
-					isito = _mm256_and_si256( isito, xOKOK271[REM(n59,271,9)] );
-					isito = _mm256_and_si256( isito, xOKOK277[REM(n59,277,9)] );
-					isito = _mm256_and_si256( isito, xOKOK281[REM(n59,281,9)] );
-					isito = _mm256_and_si256( isito, xOKOK283[REM(n59,283,9)] );
-					isito = _mm256_and_si256( isito, xOKOK293[REM(n59,293,9)] );
-					isito = _mm256_and_si256( isito, xOKOK307[REM(n59,307,9)] );
-					isito = _mm256_and_si256( isito, xOKOK311[REM(n59,311,9)] );
-					isito = _mm256_and_si256( isito, xOKOK313[REM(n59,313,9)] );
-					isito = _mm256_and_si256( isito, xOKOK317[REM(n59,317,9)] );
-					isito = _mm256_and_si256( isito, xOKOK331[REM(n59,331,9)] );
-					isito = _mm256_and_si256( isito, xOKOK337[REM(n59,337,9)] );
-					isito = _mm256_and_si256( isito, xOKOK347[REM(n59,347,9)] );
-				if( continuesito_avx2(isito) ){
-					isito = _mm256_and_si256( isito, xOKOK349[REM(n59,349,9)] );
-					isito = _mm256_and_si256( isito, xOKOK353[REM(n59,353,9)] );
-					isito = _mm256_and_si256( isito, xOKOK359[REM(n59,359,9)] );
-					isito = _mm256_and_si256( isito, xOKOK367[REM(n59,367,9)] );
-					isito = _mm256_and_si256( isito, xOKOK373[REM(n59,373,9)] );
-					isito = _mm256_and_si256( isito, xOKOK379[REM(n59,379,9)] );
-					isito = _mm256_and_si256( isito, xOKOK383[REM(n59,383,9)] );
-					isito = _mm256_and_si256( isito, xOKOK389[REM(n59,389,9)] );
-					isito = _mm256_and_si256( isito, xOKOK397[REM(n59,397,9)] );
-					isito = _mm256_and_si256( isito, xOKOK401[REM(n59,401,9)] );
-					isito = _mm256_and_si256( isito, xOKOK409[REM(n59,409,9)] );
-					isito = _mm256_and_si256( isito, xOKOK419[REM(n59,419,9)] );
-				if( continuesito_avx2(isito) ){
-					isito = _mm256_and_si256( isito, xOKOK421[REM(n59,421,9)] );
-					isito = _mm256_and_si256( isito, xOKOK431[REM(n59,431,9)] );
-					isito = _mm256_and_si256( isito, xOKOK433[REM(n59,433,9)] );
-					isito = _mm256_and_si256( isito, xOKOK439[REM(n59,439,9)] );
-					isito = _mm256_and_si256( isito, xOKOK443[REM(n59,443,9)] );
-					isito = _mm256_and_si256( isito, xOKOK449[REM(n59,449,9)] );
-					isito = _mm256_and_si256( isito, xOKOK457[REM(n59,457,9)] );
-					isito = _mm256_and_si256( isito, xOKOK461[REM(n59,461,9)] );
-					isito = _mm256_and_si256( isito, xOKOK463[REM(n59,463,9)] );
-					isito = _mm256_and_si256( isito, xOKOK467[REM(n59,467,9)] );
-					isito = _mm256_and_si256( isito, xOKOK479[REM(n59,479,9)] );
-					isito = _mm256_and_si256( isito, xOKOK487[REM(n59,487,9)] );
-				if( continuesito_avx2(isito) ){
-					isito = _mm256_and_si256( isito, xOKOK491[REM(n59,491,9)] );
-					isito = _mm256_and_si256( isito, xOKOK499[REM(n59,499,9)] );
-					isito = _mm256_and_si256( isito, xOKOK503[REM(n59,503,9)] );
-					isito = _mm256_and_si256( isito, xOKOK509[REM(n59,509,9)] );
-					isito = _mm256_and_si256( isito, xOKOK521[REM(n59,521,10)] );
-					isito = _mm256_and_si256( isito, xOKOK523[REM(n59,523,10)] );
-					isito = _mm256_and_si256( isito, xOKOK541[REM(n59,541,10)] );
-				if( continuesito_avx2(isito) ){
+				dsito = _mm256_and_pd( xOKOK61[_mm256_extract_epi16(rvec, 15)], xOKOK67[_mm256_extract_epi16(rvec, 14)] );
+				dsito = _mm256_and_pd( dsito, xOKOK71[_mm256_extract_epi16(rvec, 13)] );
+				dsito = _mm256_and_pd( dsito, xOKOK73[_mm256_extract_epi16(rvec, 12)] );
+				dsito = _mm256_and_pd( dsito, xOKOK79[_mm256_extract_epi16(rvec, 11)] );
+				dsito = _mm256_and_pd( dsito, xOKOK83[_mm256_extract_epi16(rvec, 10)] );
+				dsito = _mm256_and_pd( dsito, xOKOK89[_mm256_extract_epi16(rvec, 9)] );
+				dsito = _mm256_and_pd( dsito, xOKOK97[_mm256_extract_epi16(rvec, 8)] );
+				dsito = _mm256_and_pd( dsito, xOKOK101[_mm256_extract_epi16(rvec, 7)] );
+				dsito = _mm256_and_pd( dsito, xOKOK103[_mm256_extract_epi16(rvec, 6)] );
+				dsito = _mm256_and_pd( dsito, xOKOK107[_mm256_extract_epi16(rvec, 5)] );
+				dsito = _mm256_and_pd( dsito, xOKOK109[_mm256_extract_epi16(rvec, 4)] );
+				dsito = _mm256_and_pd( dsito, xOKOK113[_mm256_extract_epi16(rvec, 3)] );
+				dsito = _mm256_and_pd( dsito, xOKOK127[_mm256_extract_epi16(rvec, 2)] );
+				dsito = _mm256_and_pd( dsito, xOKOK131[_mm256_extract_epi16(rvec, 1)] );
+				dsito = _mm256_and_pd( dsito, xOKOK137[_mm256_extract_epi16(rvec, 0)] );
+				if( continuesito_avx2(dsito) ){
+					dsito = _mm256_and_pd( dsito, xOKOK139[REM(n59,139,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK149[REM(n59,149,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK151[REM(n59,151,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK157[REM(n59,157,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK163[REM(n59,163,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK167[REM(n59,167,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK173[REM(n59,173,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK179[REM(n59,179,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK181[REM(n59,181,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK191[REM(n59,191,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK193[REM(n59,193,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK197[REM(n59,197,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK199[REM(n59,199,8)] );
+				if( continuesito_avx2(dsito) ){
+					dsito = _mm256_and_pd( dsito, xOKOK211[REM(n59,211,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK223[REM(n59,223,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK227[REM(n59,227,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK229[REM(n59,229,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK233[REM(n59,233,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK239[REM(n59,239,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK241[REM(n59,241,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK251[REM(n59,251,8)] );
+					dsito = _mm256_and_pd( dsito, xOKOK257[REM(n59,257,9)] );
+					dsito = _mm256_and_pd( dsito, xOKOK263[REM(n59,263,9)] );
+					dsito = _mm256_and_pd( dsito, xOKOK269[REM(n59,269,9)] );
+					dsito = _mm256_and_pd( dsito, xOKOK271[REM(n59,271,9)] );
+					dsito = _mm256_and_pd( dsito, xOKOK277[REM(n59,277,9)] );
+				if( continuesito_avx2(dsito) ){
+					__m256i isito;
 					int64_t sito0;
 					int64_t sito1;
 					int64_t sito2;
 					int64_t sito3; 
 
+					isito = _mm256_castpd_si256( dsito );
 					sito0 = _mm256_extract_epi64( isito, 3 );
 					sito1 = _mm256_extract_epi64( isito, 2 );
 					sito2 = _mm256_extract_epi64( isito, 1 );
 					sito3 = _mm256_extract_epi64( isito, 0 );
 
-					if(sito0)
-						checksito_avx2(K, STEP, n59, sito0, SHIFT);
-					if(sito1)
-						checksito_avx2(K, STEP, n59, sito1, SHIFT+64);
-					if(sito2)
-						checksito_avx2(K, STEP, n59, sito2, SHIFT+128);
-					if(sito3)
-						checksito_avx2(K, STEP, n59, sito3, SHIFT+192);
+					if(sito0){
+						int b;
+						int64_t n;
+						int bLimit, bStart;
+
+						bLimit = 63 - __builtin_clzll(sito0);
+						bStart = __builtin_ctzll(sito0);
+
+						for (b = bStart; b <= bLimit; b++){
+							if ((sito0 >> b) & 1)
+							{
+								n=n59+(b+SHIFT)*MOD;
+
+								if(n%7)
+								if(n%11)
+								if(n%13)
+								if(n%17)
+								if(n%19)
+								if(n%23)
+								if(OK281[n%281])
+								if(OK283[n%283])
+								if(OK293[n%293])
+								if(OK307[n%307])
+								if(OK311[n%311])
+								if(OK313[n%313])
+								if(OK317[n%317])
+								if(OK331[n%331])
+								if(OK337[n%337])
+								if(OK347[n%347])
+								if(OK349[n%349])
+								if(OK353[n%353])
+								if(OK359[n%359])
+								if(OK367[n%367])
+								if(OK373[n%373])
+								if(OK379[n%379])
+								if(OK383[n%383])
+								if(OK389[n%389])
+								if(OK397[n%397])
+								if(OK401[n%401])
+								if(OK409[n%409])
+								if(OK419[n%419])
+								if(OK421[n%421])
+								if(OK431[n%431])
+								if(OK433[n%433])
+								if(OK439[n%439])
+								if(OK443[n%443])
+								if(OK449[n%449])
+								if(OK457[n%457])
+								if(OK461[n%461])
+								if(OK463[n%463])
+								if(OK467[n%467])
+								if(OK479[n%479])
+								if(OK487[n%487])
+								if(OK491[n%491])
+								if(OK499[n%499])
+								if(OK503[n%503])
+								if(OK509[n%509])
+								if(OK521[n%521])
+								if(OK523[n%523])
+								if(OK541[n%541])
+								{
+									int64_t m;
+									int k;
+									k=0; m=n+STEP*5;
+									while(PrimeQ(m)){
+										k++;
+										m+=STEP;
+									}
+
+									if(k>=10){
+										m=n+STEP*4;
+										while(m>0&&PrimeQ(m)){
+											k++;
+											m-=STEP;
+										}
+									}
+
+									if(k>=10)
+									{
+										int64_t first_term = m+STEP;
+										ReportSolution(k,K,first_term);
+									}
+								}
+							}
+						}
+					}
+
+					if(sito1){
+						int b;
+						int64_t n;
+						int bLimit, bStart;
+
+						bLimit = 63 - __builtin_clzll(sito1);
+						bStart = __builtin_ctzll(sito1);
+
+						for (b = bStart; b <= bLimit; b++){
+							if ((sito1 >> b) & 1)
+							{
+								n=n59+(b+SHIFT+64)*MOD;
+
+								if(n%7)
+								if(n%11)
+								if(n%13)
+								if(n%17)
+								if(n%19)
+								if(n%23)
+								if(OK281[n%281])
+								if(OK283[n%283])
+								if(OK293[n%293])
+								if(OK307[n%307])
+								if(OK311[n%311])
+								if(OK313[n%313])
+								if(OK317[n%317])
+								if(OK331[n%331])
+								if(OK337[n%337])
+								if(OK347[n%347])
+								if(OK349[n%349])
+								if(OK353[n%353])
+								if(OK359[n%359])
+								if(OK367[n%367])
+								if(OK373[n%373])
+								if(OK379[n%379])
+								if(OK383[n%383])
+								if(OK389[n%389])
+								if(OK397[n%397])
+								if(OK401[n%401])
+								if(OK409[n%409])
+								if(OK419[n%419])
+								if(OK421[n%421])
+								if(OK431[n%431])
+								if(OK433[n%433])
+								if(OK439[n%439])
+								if(OK443[n%443])
+								if(OK449[n%449])
+								if(OK457[n%457])
+								if(OK461[n%461])
+								if(OK463[n%463])
+								if(OK467[n%467])
+								if(OK479[n%479])
+								if(OK487[n%487])
+								if(OK491[n%491])
+								if(OK499[n%499])
+								if(OK503[n%503])
+								if(OK509[n%509])
+								if(OK521[n%521])
+								if(OK523[n%523])
+								if(OK541[n%541])
+								{
+									int64_t m;
+									int k;
+									k=0; m=n+STEP*5;
+									while(PrimeQ(m)){
+										k++;
+										m+=STEP;
+									}
+
+									if(k>=10){
+										m=n+STEP*4;
+										while(m>0&&PrimeQ(m)){
+											k++;
+											m-=STEP;
+										}
+									}
+
+									if(k>=10)
+									{
+										int64_t first_term = m+STEP;
+										ReportSolution(k,K,first_term);
+									}
+								}
+							}
+						}
+					}
+
+					if(sito2){
+						int b;
+						int64_t n;
+						int bLimit, bStart;
+
+						bLimit = 63 - __builtin_clzll(sito2);
+						bStart = __builtin_ctzll(sito2);
+
+						for (b = bStart; b <= bLimit; b++){
+							if ((sito2 >> b) & 1)
+							{
+								n=n59+(b+SHIFT+128)*MOD;
+
+								if(n%7)
+								if(n%11)
+								if(n%13)
+								if(n%17)
+								if(n%19)
+								if(n%23)
+								if(OK281[n%281])
+								if(OK283[n%283])
+								if(OK293[n%293])
+								if(OK307[n%307])
+								if(OK311[n%311])
+								if(OK313[n%313])
+								if(OK317[n%317])
+								if(OK331[n%331])
+								if(OK337[n%337])
+								if(OK347[n%347])
+								if(OK349[n%349])
+								if(OK353[n%353])
+								if(OK359[n%359])
+								if(OK367[n%367])
+								if(OK373[n%373])
+								if(OK379[n%379])
+								if(OK383[n%383])
+								if(OK389[n%389])
+								if(OK397[n%397])
+								if(OK401[n%401])
+								if(OK409[n%409])
+								if(OK419[n%419])
+								if(OK421[n%421])
+								if(OK431[n%431])
+								if(OK433[n%433])
+								if(OK439[n%439])
+								if(OK443[n%443])
+								if(OK449[n%449])
+								if(OK457[n%457])
+								if(OK461[n%461])
+								if(OK463[n%463])
+								if(OK467[n%467])
+								if(OK479[n%479])
+								if(OK487[n%487])
+								if(OK491[n%491])
+								if(OK499[n%499])
+								if(OK503[n%503])
+								if(OK509[n%509])
+								if(OK521[n%521])
+								if(OK523[n%523])
+								if(OK541[n%541])
+								{
+									int64_t m;
+									int k;
+									k=0; m=n+STEP*5;
+									while(PrimeQ(m)){
+										k++;
+										m+=STEP;
+									}
+
+									if(k>=10){
+										m=n+STEP*4;
+										while(m>0&&PrimeQ(m)){
+											k++;
+											m-=STEP;
+										}
+									}
+
+									if(k>=10)
+									{
+										int64_t first_term = m+STEP;
+										ReportSolution(k,K,first_term);
+									}
+								}
+							}
+						}
+					}
+
+					if(sito3){
+						int b;
+						int64_t n;
+						int bLimit, bStart;
+
+						bLimit = 63 - __builtin_clzll(sito3);
+						bStart = __builtin_ctzll(sito3);
+
+						for (b = bStart; b <= bLimit; b++){
+							if ((sito3 >> b) & 1)
+							{
+								n=n59+(b+SHIFT+192)*MOD;
+
+								if(n%7)
+								if(n%11)
+								if(n%13)
+								if(n%17)
+								if(n%19)
+								if(n%23)
+								if(OK281[n%281])
+								if(OK283[n%283])
+								if(OK293[n%293])
+								if(OK307[n%307])
+								if(OK311[n%311])
+								if(OK313[n%313])
+								if(OK317[n%317])
+								if(OK331[n%331])
+								if(OK337[n%337])
+								if(OK347[n%347])
+								if(OK349[n%349])
+								if(OK353[n%353])
+								if(OK359[n%359])
+								if(OK367[n%367])
+								if(OK373[n%373])
+								if(OK379[n%379])
+								if(OK383[n%383])
+								if(OK389[n%389])
+								if(OK397[n%397])
+								if(OK401[n%401])
+								if(OK409[n%409])
+								if(OK419[n%419])
+								if(OK421[n%421])
+								if(OK431[n%431])
+								if(OK433[n%433])
+								if(OK439[n%439])
+								if(OK443[n%443])
+								if(OK449[n%449])
+								if(OK457[n%457])
+								if(OK461[n%461])
+								if(OK463[n%463])
+								if(OK467[n%467])
+								if(OK479[n%479])
+								if(OK487[n%487])
+								if(OK491[n%491])
+								if(OK499[n%499])
+								if(OK503[n%503])
+								if(OK509[n%509])
+								if(OK521[n%521])
+								if(OK523[n%523])
+								if(OK541[n%541])
+								{
+									int64_t m;
+									int k;
+									k=0; m=n+STEP*5;
+									while(PrimeQ(m)){
+										k++;
+										m+=STEP;
+									}
+
+									if(k>=10){
+										m=n+STEP*4;
+										while(m>0&&PrimeQ(m)){
+											k++;
+											m-=STEP;
+										}
+									}
+
+									if(k>=10)
+									{
+										int64_t first_term = m+STEP;
+										ReportSolution(k,K,first_term);
+									}
+								}
+							}
+						}
+					}
 
 
-				}}}}}}}
+				}}}
 
 				n59+=S59;
 
@@ -683,7 +854,7 @@ void Search_avx2(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 		}
 		}
 		}
-	
+		
 		iter+=4;
 		if(iter<10){		
 			checkpoint(startSHIFT,K,0,iter);

@@ -1,6 +1,7 @@
 /* cpusse41.cpp
 
-   Modified for SSE4.1 support 7 August 2016 by Bryan Little
+   SSE4.1 support 7 August 2016 by Bryan Little
+   Sieve arrays sized to fit in 256kbyte L2 cache
 
    Blend and count zeros by Sebastian Jaworowicz
 
@@ -45,53 +46,6 @@
   }
 
 
-void checksito_sse41(int K, int64_t STEP, int64_t n59, int64_t sito, int SHIFT){
-
-	int b;
-	int64_t n;
-	int bLimit, bStart;
-
-	bLimit = 63 - __builtin_clzll(sito);
-	bStart = __builtin_ctzll(sito);
-
-	for (b = bStart; b <= bLimit; b++){
-		if ((sito >> b) & 1)
-		{
-			n=n59+(b+SHIFT)*MOD;
-
-			if(n%7)
-			if(n%11)
-			if(n%13)
-			if(n%17)
-			if(n%19)
-			if(n%23)
-			{
-				int64_t m;
-				int k;
-				k=0; m=n+STEP*5;
-				while(PrimeQ(m)){
-					k++;
-					m+=STEP;
-				}
-
-				if(k>=10){
-					m=n+STEP*4;
-					while(m>0&&PrimeQ(m)){
-						k++;
-						m-=STEP;
-					}
-				}
-
-				if(k>=10)
-				{
-					int64_t first_term = m+STEP;
-					ReportSolution(k,K,first_term);
-				}
-			}
-		}
-	}
-}
-
 int continuesito_sse41(__m128i isito){
 
 	if( _mm_testz_si128(isito,isito) == 0 )
@@ -100,7 +54,6 @@ int continuesito_sse41(__m128i isito){
 	return 0;
 
 }
-
 
 
 void Search_sse41(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
@@ -118,89 +71,91 @@ void Search_sse41(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 	int iter = ITER;
 	int progress = iter * 42;
 
-	char OK61[61];
-	char OK67[67];
-	char OK71[71];
-	char OK73[73];
-	char OK79[79];
-	char OK83[83];
-	char OK89[89];
-	char OK97[97];
-	char OK101[101];
-	char OK103[103];
-	char OK107[107];
-	char OK109[109];
-	char OK113[113];
-	char OK127[127];
-	char OK131[131];
-	char OK137[137];
-	char OK139[139];
-	char OK149[149];
-	char OK151[151];
-	char OK157[157];
-	char OK163[163];
-	char OK167[167];
-	char OK173[173];
-	char OK179[179];
-	char OK181[181];
-	char OK191[191];
-	char OK193[193];
-	char OK197[197];
-	char OK199[199];
-	char OK211[211];
-	char OK223[223];
-	char OK227[227];
-	char OK229[229];
-	char OK233[233];
-	char OK239[239];
-	char OK241[241];
-	char OK251[251];
-	char OK257[257];
-	char OK263[263];
-	char OK269[269];
-	char OK271[271];
-	char OK277[277];
-	char OK281[281];
-	char OK283[283];
-	char OK293[293];
-	char OK307[307];
-	char OK311[311];
-	char OK313[313];
-	char OK317[317];
-	char OK331[331];
-	char OK337[337];
-	char OK347[347];
-	char OK349[349];
-	char OK353[353];
-	char OK359[359];
-	char OK367[367];
-	char OK373[373];
-	char OK379[379];
-	char OK383[383];
-	char OK389[389];
-	char OK397[397];
-	char OK401[401];
-	char OK409[409];
-	char OK419[419];
-	char OK421[421];
-	char OK431[431];
-	char OK433[433];
-	char OK439[439];
-	char OK443[443];
-	char OK449[449];
-	char OK457[457];
-	char OK461[461];
-	char OK463[463];
-	char OK467[467];
-	char OK479[479];
-	char OK487[487];
-	char OK491[491];
-	char OK499[499];
-	char OK503[503];
-	char OK509[509];
-	char OK521[521];
-	char OK523[523];
-	char OK541[541];
+	// char arrays total 23693 bytes
+	static char OK61[61];
+	static char OK67[67];
+	static char OK71[71];
+	static char OK73[73];
+	static char OK79[79];
+	static char OK83[83];
+	static char OK89[89];
+	static char OK97[97];
+	static char OK101[101];
+	static char OK103[103];
+	static char OK107[107];
+	static char OK109[109];
+	static char OK113[113];
+	static char OK127[127];
+	static char OK131[131];
+	static char OK137[137];
+	static char OK139[139];
+	static char OK149[149];
+	static char OK151[151];
+	static char OK157[157];
+	static char OK163[163];
+	static char OK167[167];
+	static char OK173[173];
+	static char OK179[179];
+	static char OK181[181];
+	static char OK191[191];
+	static char OK193[193];
+	static char OK197[197];
+	static char OK199[199];
+	static char OK211[211];
+	static char OK223[223];
+	static char OK227[227];
+	static char OK229[229];
+	static char OK233[233];
+	static char OK239[239];
+	static char OK241[241];
+	static char OK251[251];
+	static char OK257[257];
+	static char OK263[263];
+	static char OK269[269];
+	static char OK271[271];
+	static char OK277[277];
+	static char OK281[281];
+	static char OK283[283];
+	static char OK293[293];
+	static char OK307[307];
+	static char OK311[311];
+	static char OK313[313];
+	static char OK317[317];
+	static char OK331[331];
+	static char OK337[337];
+	static char OK347[347];
+	static char OK349[349];
+	static char OK353[353];
+	static char OK359[359];
+	static char OK367[367];
+	static char OK373[373];
+	static char OK379[379];
+	static char OK383[383];
+	static char OK389[389];
+	static char OK397[397];
+	static char OK401[401];
+	static char OK409[409];
+	static char OK419[419];
+	static char OK421[421];
+	static char OK431[431];
+	static char OK433[433];
+	static char OK439[439];
+	static char OK443[443];
+	static char OK449[449];
+	static char OK457[457];
+	static char OK461[461];
+	static char OK463[463];
+	static char OK467[467];
+	static char OK479[479];
+	static char OK487[487];
+	static char OK491[491];
+	static char OK499[499];
+	static char OK503[503];
+	static char OK509[509];
+	static char OK521[521];
+	static char OK523[523];
+	static char OK541[541];
+	// m128 arrays total 221568 bytes
 	static __m128i xOKOK61[61];
 	static __m128i xOKOK67[67];
 	static __m128i xOKOK71[71];
@@ -263,27 +218,7 @@ void Search_sse41(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 	static __m128i xOKOK389[389];
 	static __m128i xOKOK397[397];
 	static __m128i xOKOK401[401];
-	static __m128i xOKOK409[409];
-	static __m128i xOKOK419[419];
-	static __m128i xOKOK421[421];
-	static __m128i xOKOK431[431];
-	static __m128i xOKOK433[433];
-	static __m128i xOKOK439[439];
-	static __m128i xOKOK443[443];
-	static __m128i xOKOK449[449];
-	static __m128i xOKOK457[457];
-	static __m128i xOKOK461[461];
-	static __m128i xOKOK463[463];
-	static __m128i xOKOK467[467];
-	static __m128i xOKOK479[479];
-	static __m128i xOKOK487[487];
-	static __m128i xOKOK491[491];
-	static __m128i xOKOK499[499];
-	static __m128i xOKOK503[503];
-	static __m128i xOKOK509[509];
-	static __m128i xOKOK521[521];
-	static __m128i xOKOK523[523];
-	static __m128i xOKOK541[541];
+
 
 	int64_t aOKOK,bOKOK;
 
@@ -468,27 +403,6 @@ void Search_sse41(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 		MAKE_OKOKx(389);
 		MAKE_OKOKx(397);
 		MAKE_OKOKx(401);
-		MAKE_OKOKx(409);
-		MAKE_OKOKx(419);
-		MAKE_OKOKx(421);
-		MAKE_OKOKx(431);
-		MAKE_OKOKx(433);
-		MAKE_OKOKx(439);
-		MAKE_OKOKx(443);
-		MAKE_OKOKx(449);
-		MAKE_OKOKx(457);
-		MAKE_OKOKx(461);
-		MAKE_OKOKx(463);
-		MAKE_OKOKx(467);
-		MAKE_OKOKx(479);
-		MAKE_OKOKx(487);
-		MAKE_OKOKx(491);
-		MAKE_OKOKx(499);
-		MAKE_OKOKx(503);
-		MAKE_OKOKx(509);
-		MAKE_OKOKx(521);
-		MAKE_OKOKx(523);
-		MAKE_OKOKx(541);
 
 		// start searching
 		for(i31=0;i31<7;++i31){
@@ -591,29 +505,6 @@ void Search_sse41(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 					isito = _mm_and_si128( isito, xOKOK389[REM(n59,389,9)] );
 					isito = _mm_and_si128( isito, xOKOK397[REM(n59,397,9)] );
 					isito = _mm_and_si128( isito, xOKOK401[REM(n59,401,9)] );
-					isito = _mm_and_si128( isito, xOKOK409[REM(n59,409,9)] );
-					isito = _mm_and_si128( isito, xOKOK419[REM(n59,419,9)] );
-				if( continuesito_sse41(isito) ){
-					isito = _mm_and_si128( isito, xOKOK421[REM(n59,421,9)] );
-					isito = _mm_and_si128( isito, xOKOK431[REM(n59,431,9)] );
-					isito = _mm_and_si128( isito, xOKOK433[REM(n59,433,9)] );
-					isito = _mm_and_si128( isito, xOKOK439[REM(n59,439,9)] );
-					isito = _mm_and_si128( isito, xOKOK443[REM(n59,443,9)] );
-					isito = _mm_and_si128( isito, xOKOK449[REM(n59,449,9)] );
-					isito = _mm_and_si128( isito, xOKOK457[REM(n59,457,9)] );
-					isito = _mm_and_si128( isito, xOKOK461[REM(n59,461,9)] );
-					isito = _mm_and_si128( isito, xOKOK463[REM(n59,463,9)] );
-					isito = _mm_and_si128( isito, xOKOK467[REM(n59,467,9)] );
-					isito = _mm_and_si128( isito, xOKOK479[REM(n59,479,9)] );
-					isito = _mm_and_si128( isito, xOKOK487[REM(n59,487,9)] );
-				if( continuesito_sse41(isito) ){
-					isito = _mm_and_si128( isito, xOKOK491[REM(n59,491,9)] );
-					isito = _mm_and_si128( isito, xOKOK499[REM(n59,499,9)] );
-					isito = _mm_and_si128( isito, xOKOK503[REM(n59,503,9)] );
-					isito = _mm_and_si128( isito, xOKOK509[REM(n59,509,9)] );
-					isito = _mm_and_si128( isito, xOKOK521[REM(n59,521,10)] );
-					isito = _mm_and_si128( isito, xOKOK523[REM(n59,523,10)] );
-					isito = _mm_and_si128( isito, xOKOK541[REM(n59,541,10)] );
 				if( continuesito_sse41(isito) ){
 
 					int64_t sito0;
@@ -622,12 +513,141 @@ void Search_sse41(int K, int startSHIFT, int ITER, int K_COUNT, int K_DONE)
 					sito0 = _mm_extract_epi64( isito, 1 );
 					sito1 = _mm_extract_epi64( isito, 0 );
 
-					if(sito0)
-						checksito_sse41(K, STEP, n59, sito0, SHIFT);
-					if(sito1)
-						checksito_sse41(K, STEP, n59, sito1, SHIFT+64);
+					if(sito0){
+						int b;
+						int64_t n;
+						int bLimit, bStart;
 
-				}}}}}}}
+						bLimit = 63 - __builtin_clzll(sito0);
+						bStart = __builtin_ctzll(sito0);
+
+						for (b = bStart; b <= bLimit; b++){
+							if ((sito0 >> b) & 1)
+							{
+								n=n59+(b+SHIFT)*MOD;
+
+								if(n%7)
+								if(n%11)
+								if(n%13)
+								if(n%17)
+								if(n%19)
+								if(n%23)
+								if(OK409[n%409])
+								if(OK419[n%419])
+								if(OK421[n%421])
+								if(OK431[n%431])
+								if(OK433[n%433])
+								if(OK439[n%439])
+								if(OK443[n%443])
+								if(OK449[n%449])
+								if(OK457[n%457])
+								if(OK461[n%461])
+								if(OK463[n%463])
+								if(OK467[n%467])
+								if(OK479[n%479])
+								if(OK487[n%487])
+								if(OK491[n%491])
+								if(OK499[n%499])
+								if(OK503[n%503])
+								if(OK509[n%509])
+								if(OK521[n%521])
+
+								if(OK523[n%523])
+								if(OK541[n%541])
+								{
+									int64_t m;
+									int k;
+									k=0; m=n+STEP*5;
+									while(PrimeQ(m)){
+										k++;
+										m+=STEP;
+									}
+
+									if(k>=10){
+										m=n+STEP*4;
+										while(m>0&&PrimeQ(m)){
+											k++;
+											m-=STEP;
+										}
+									}
+
+									if(k>=10)
+									{
+										int64_t first_term = m+STEP;
+										ReportSolution(k,K,first_term);
+									}
+								}
+							}
+						}
+					}
+					if(sito1){
+						int b;
+						int64_t n;
+						int bLimit, bStart;
+
+						bLimit = 63 - __builtin_clzll(sito1);
+						bStart = __builtin_ctzll(sito1);
+
+						for (b = bStart; b <= bLimit; b++){
+							if ((sito1 >> b) & 1)
+							{
+								n=n59+(b+SHIFT+64)*MOD;
+
+								if(n%7)
+								if(n%11)
+								if(n%13)
+								if(n%17)
+								if(n%19)
+								if(n%23)
+								if(OK409[n%409])
+								if(OK419[n%419])
+								if(OK421[n%421])
+								if(OK431[n%431])
+								if(OK433[n%433])
+								if(OK439[n%439])
+								if(OK443[n%443])
+								if(OK449[n%449])
+								if(OK457[n%457])
+								if(OK461[n%461])
+								if(OK463[n%463])
+								if(OK467[n%467])
+								if(OK479[n%479])
+								if(OK487[n%487])
+								if(OK491[n%491])
+								if(OK499[n%499])
+								if(OK503[n%503])
+								if(OK509[n%509])
+								if(OK521[n%521])
+								if(OK523[n%523])
+								if(OK541[n%541])
+								{
+									int64_t m;
+									int k;
+									k=0; m=n+STEP*5;
+									while(PrimeQ(m)){
+										k++;
+										m+=STEP;
+									}
+
+									if(k>=10){
+										m=n+STEP*4;
+										while(m>0&&PrimeQ(m)){
+											k++;
+											m-=STEP;
+										}
+									}
+
+									if(k>=10)
+									{
+										int64_t first_term = m+STEP;
+										ReportSolution(k,K,first_term);
+									}
+								}
+							}
+						}
+					}
+
+				}}}}}
 
 
 				n59+=S59;
