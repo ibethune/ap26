@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <time.h>
+#include <string.h>
 
 #include "CONST.H"
 #include "PrimeQ_x86.h"
