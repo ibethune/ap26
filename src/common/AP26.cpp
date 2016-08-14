@@ -2,7 +2,7 @@
 
 // AP26 application version
 #define MAJORV 1
-#define MINORV 2
+#define MINORV 3
 #define SUFFIXV "-dev"
 
 #ifdef AP26_OPENCL
