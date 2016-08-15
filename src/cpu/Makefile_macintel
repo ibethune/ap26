@@ -11,7 +11,7 @@ BOINC_INC = -I$(BOINC_DIR)/api -I$(BOINC_DIR)/lib -I$(BOINC_DIR)
 BOINC_LIB = -L$(BOINC_DIR)/mac_build/build/Deployment/ -lboinc -lboinc_api -lstdc++
 
 DFLAGS  = -DAP26_BOINC -DAP26_CPU
-CFLAGS  = -Wa,-q -I . -O3 -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5
+CFLAGS  = -Wa,-q -I . -O3 -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.9.sdk -mmacosx-version-min=10.5
 LDFLAGS = $(CFLAGS)
 
 all : $(APP) 
