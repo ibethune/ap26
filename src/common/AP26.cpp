@@ -3,7 +3,8 @@
 // AP26 application version
 #define MAJORV 1
 #define MINORV 3
-#define SUFFIXV "-dev"
+#define SUFFIXV ""
+//#define SUFFIXV "-dev"
 
 #ifdef AP26_OPENCL
 # define TARGET "OpenCL"
