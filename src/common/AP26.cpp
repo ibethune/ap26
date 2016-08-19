@@ -2,9 +2,9 @@
 
 // AP26 application version
 #define MAJORV 1
-#define MINORV 3
-#define SUFFIXV ""
-//#define SUFFIXV "-dev"
+#define MINORV 4
+//#define SUFFIXV ""
+#define SUFFIXV "-dev"
 
 #ifdef AP26_OPENCL
 # define TARGET "OpenCL"
@@ -647,15 +647,15 @@ int main(int argc, char *argv[])
 
 	if(argc == 5){
 		if( strcmp(argv[4], "-sse2") == 0 ){
-			printf("forcing SSE2 mode\n");
+			fprintf(stderr, "forcing SSE2 mode\n");
 			sse41 = 0;
 			avx = 0;
 			avx2 = 0;
 		}
 		else if( strcmp(argv[4], "-sse41") == 0 ){
-			printf("forcing SSE4.1 mode\n");
+			fprintf(stderr, "forcing SSE4.1 mode\n");
 			if(sse41 == 0){
-				printf("ERROR: CPU does not support SSE4.1 instructions!\n");
+				fprintf(stderr, "ERROR: CPU does not support SSE4.1 instructions!\n");
 				exit(EXIT_FAILURE);
 			}
 			sse41 = 1;
@@ -663,9 +663,9 @@ int main(int argc, char *argv[])
 			avx2 = 0;
 		}
 		else if( strcmp(argv[4], "-avx") == 0 ){
-			printf("forcing AVX mode\n");
+			fprintf(stderr, "forcing AVX mode\n");
 			if(avx == 0){
-				printf("ERROR: CPU does not support AVX instructions!\n");
+				fprintf(stderr, "ERROR: CPU does not support AVX instructions!\n");
 				exit(EXIT_FAILURE);
 			}
 			sse41 = 0;
@@ -673,9 +673,9 @@ int main(int argc, char *argv[])
 			avx2 = 0;
 		}
 		else if( strcmp(argv[4], "-avx2") == 0 ){
-			printf("forcing AVX2 mode\n");
+			fprintf(stderr, "forcing AVX2 mode\n");
 			if(avx2 == 0){
-				printf("ERROR: CPU does not support AVX2 instructions!\n");
+				fprintf(stderr, "ERROR: CPU does not support AVX2 instructions!\n");
 				exit(EXIT_FAILURE);
 			}
 			sse41 = 0;
