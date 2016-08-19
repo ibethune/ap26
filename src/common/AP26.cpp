@@ -527,8 +527,14 @@ void checkpoint(int SHIFT, int K, int force, int ITER)
 	if (force || boinc_time_to_checkpoint()){
 #endif
 
-		if (results_file != NULL)
+		if (results_file != NULL){
 			fflush(results_file);
+#if defined (_WIN32)
+			_commit(_fileno(results_file));
+#else
+			fsync(fileno(results_file));
+#endif
+                }
 
 		write_state(KMIN,KMAX,SHIFT,K,ITER);
 
