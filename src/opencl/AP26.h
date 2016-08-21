@@ -297,7 +297,7 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 					sclFinish(hardware);
 					clock_gettime(CLOCK_MONOTONIC, &petime);
 					proftime = diff(pstime,petime);
-					fprintf(stderr, "kernel profile (sec): %d, (nanoseconds): %d\n", proftime.tv_sec, proftime.tv_nsec);
+					//fprintf(stderr, "kernel profile (sec): %d, (nanoseconds): %d\n", proftime.tv_sec, proftime.tv_nsec);
 					int64_t totalnano = (proftime.tv_sec * 1000000000) + proftime.tv_nsec;
 					if(totalnano < 100000000){
 						profileq = 100000000 / totalnano;
@@ -305,7 +305,7 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 					else{
 						profileq = 1;
 					}
-					fprintf(stderr, "calculated max kernel queue length: %d\n",profileq);
+					//fprintf(stderr, "calculated max kernel queue length: %d\n",profileq);
 					profile=0;
 				}				
 				else{
