@@ -4,7 +4,7 @@
 #define MAJORV 1
 #define MINORV 4
 //#define SUFFIXV ""
-#define SUFFIXV "-dev"
+#define SUFFIXV ""
 
 #ifdef AP26_OPENCL
 # define TARGET "OpenCL"
@@ -177,8 +177,8 @@ sclHard sclGetBOINCHardware( int argc, char** argv ) {
 	fprintf(stderr, "GPU Info:\n  Platform name: %s\n  Vendor: %s\n  Device name: %s\n", platformName, platformVendor, deviceName );
         int64_t gmem = (int64_t)_sclGetMaxGlobalMemSize(hardware.device);
         int64_t maxalloc = (int64_t)_sclGetMaxMemAllocSize(hardware.device);
-        fprintf(stderr, "  GPU RAM:        %lld\n", gmem);
-        fprintf(stderr, "  GPU max malloc: %lld\n", maxalloc);	
+        fprintf(stderr, "  GPU RAM:        %"PRId64"\n", gmem);
+        fprintf(stderr, "  GPU max malloc: %"PRId64"\n", maxalloc);	
 
 	clRetainCommandQueue( hardware.queue );
 	clRetainContext( hardware.context );
@@ -306,7 +306,7 @@ static void write_hash()
 
 	int64_t hash = (int64_t)( (minmax << 32) | solhash);
 
-//	printf("minmax: %llu solhash: %u\ndechash: %lld\n", minmax, solhash, hash);
+//	printf("minmax: %llu solhash: %u\ndechash: %"PRId64"\n", minmax, solhash, hash);
 
 	// convert to hex
 	while(hash!=0){
@@ -479,7 +479,7 @@ void ReportSolution(int AP_Length,int difference,int64_t First_Term)
 
 	if (i < AP_Length){
 
-		printf("Non-Solution: %d %d %lld\n",AP_Length,difference,First_Term);
+		printf("Non-Solution: %d %d %"PRId64"\n",AP_Length,difference,First_Term);
 
 		if (val_base2_ap26(AP_Length,difference,First_Term) < AP_Length){
 			// GPU really did calculate something wrong.  It's not a prp base 2 AP
@@ -501,14 +501,14 @@ void ReportSolution(int AP_Length,int difference,int64_t First_Term)
 		if (results_file == NULL)
 			results_file = my_fopen(RESULTS_FILENAME,"a");
 
-		printf("Solution: %d %d %lld\n",AP_Length,difference,First_Term);
+		printf("Solution: %d %d %"PRId64"\n",AP_Length,difference,First_Term);
 
 		if (results_file == NULL){
 			fprintf(stderr,"Cannot open %s !!!\n",RESULTS_FILENAME);
 			exit(EXIT_FAILURE);
 		}
 
-		if (fprintf(results_file,"%d %d %lld\n",AP_Length,difference,First_Term)<0){
+		if (fprintf(results_file,"%d %d %"PRId64"\n",AP_Length,difference,First_Term)<0){
 			fprintf(stderr,"Cannot write to %s !!!\n",RESULTS_FILENAME);
 			exit(EXIT_FAILURE);
 		}
