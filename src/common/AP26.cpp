@@ -86,7 +86,8 @@
 /* File names.
  */
 #ifndef STATE_FILENAME
-# define STATE_FILENAME "AP26-state.txt"
+# define STATE_FILENAME_A "AP26-state.a.txt"
+# define STATE_FILENAME_B "AP26-state.b.txt"
 #endif
 #ifndef RESULTS_FILENAME
 # define RESULTS_FILENAME "SOL-AP26.txt"
@@ -104,6 +105,7 @@
 static int KMIN, KMAX, K_DONE, K_COUNT;
 int result_hash;
 time_t last_trickle;
+bool write_state_a_next;
 
 #ifdef AP26_OPENCL
 
@@ -158,14 +160,14 @@ sclHard sclGetBOINCHardware( int argc, char** argv ) {
 
 	context = clCreateContext(cps, 1, &device, NULL, NULL, &status);
 	if (status != CL_SUCCESS) {
-        	fprintf(stderr, "Error: clCreateContext() returned %d\n", status);
+		fprintf(stderr, "Error: clCreateContext() returned %d\n", status);
         	exit(EXIT_FAILURE); 
    	}
 
 	queue = clCreateCommandQueue(context, device, 0, &status);
 	if(status != CL_SUCCESS) { 
 		fprintf(stderr, "Error: Creating Command Queue. (clCreateCommandQueue) returned %d\n", status );
-        	exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
     	}
 			
 	hardware.platform = platform;
@@ -351,44 +353,119 @@ static void write_state(int KMIN, int KMAX, int SHIFT, int K, int ITER)
 {
 	FILE *out;
 
-	if ((out = my_fopen(STATE_FILENAME,"w")) == NULL){
-		fprintf(stderr,"Cannot open %s !!!\n",STATE_FILENAME);
-		exit(EXIT_FAILURE);
+        if (write_state_a_next)
+	{
+		if ((out = my_fopen(STATE_FILENAME_A,"w")) == NULL)
+			fprintf(stderr,"Cannot open %s !!!\n",STATE_FILENAME_A);
 	}
+	else
+	{
+                if ((out = my_fopen(STATE_FILENAME_B,"w")) == NULL)
+                        fprintf(stderr,"Cannot open %s !!!\n",STATE_FILENAME_B);
+        }
 
 	if (fprintf(out,"%d %d %d %d %d %d %lf\n",KMIN,KMAX,SHIFT,K,ITER,result_hash, (double)last_trickle) < 0){
-		fprintf(stderr,"Cannot write to %s !!!\n",STATE_FILENAME);
-		exit(EXIT_FAILURE);
+		if (write_state_a_next)
+			fprintf(stderr,"Cannot write to %s !!! Continuing...\n",STATE_FILENAME_A);
+		else
+			fprintf(stderr,"Cannot write to %s !!! Continuing...\n",STATE_FILENAME_B);
+
+		// Attempt to close, even though we failed to write
+		fclose(out);
+	}
+	else
+	{
+		// If state file is closed OK, write to the other state file
+		// next time round
+		if (fclose(out) == 0) write_state_a_next != write_state_a_next; 
 	}
 
 	fclose(out);
 }
 
 /* Return 1 only if a valid checkpoint can be read.
+   Attempts to read from both state files,
+   uses the most recent one available.
  */
 static int read_state(int KMIN, int KMAX, int SHIFT, int *K, int *ITER)
 {
 	FILE *in;
-	int tmp1, tmp2, tmp3, tmp4;
-        double tmp5;
+	bool good_state_a = true;
+	bool good_state_b = true;
+	int tmp1, tmp2, tmp3;
+	int K_a, ITER_a, hash_a, K_b, ITER_b, hash_b;
+        double trickle_a, trickle_b;
 
-	if ((in = my_fopen(STATE_FILENAME,"r")) == NULL)
-		return 0;
+        // Attempt to read state file A
+	if ((in = my_fopen(STATE_FILENAME_A,"r")) == NULL)
+        {
+		good_state_a = false;
+        }
+	else if (fscanf(in,"%d %d %d %d %d %d %lf\n",&tmp1,&tmp2,&tmp3,&K_a,&ITER_a,&hash_a,&trickle_a) != 7)
+        {
+		fprintf(stderr,"Cannot parse %s !!!\n",STATE_FILENAME_A);
+		good_state_a = false;
+	}
+	else
+        {
+		fclose(in);
 
-	if (fscanf(in,"%d %d %d %d %d %d %lf\n",&tmp1,&tmp2,&tmp3,K,ITER,&tmp4,&tmp5) != 7){
-		fprintf(stderr,"Cannot parse %s !!!\n",STATE_FILENAME);
-		exit(EXIT_FAILURE);
+		/* Check that KMIN KMAX SHIFT all match */
+		if (tmp1 != KMIN || tmp2 != KMAX || tmp3 != SHIFT){
+			good_state_a = false;
+		}
 	}
 
-	fclose(in);
+        // Attempt to read state file B
+        if ((in = my_fopen(STATE_FILENAME_B,"r")) == NULL)
+        {
+                good_state_b = false;
+        }
+        else if (fscanf(in,"%d %d %d %d %d %d %lf\n",&tmp1,&tmp2,&tmp3,&K_b,&ITER_b,&hash_b,&trickle_b) != 7)
+        {
+                fprintf(stderr,"Cannot parse %s !!!\n",STATE_FILENAME_B);
+                good_state_b = false;
+        }
+        else
+        {
+                fclose(in);
 
-	/* Check that KMIN KMAX SHIFT all match */
-	if (tmp1==KMIN && tmp2==KMAX && tmp3==SHIFT){
-		result_hash = tmp4;
-                last_trickle = (time_t)tmp5;
+                /* Check that KMIN KMAX SHIFT all match */
+                if (tmp1 != KMIN || tmp2 != KMAX || tmp3 != SHIFT){
+                        good_state_b = false;
+                }
+        }
+
+        // If both state files are OK, check which is the most recent
+	if (good_state_a && good_state_b)
+	{
+		if (K_a > K_b || (K_a == K_b && ITER_a > ITER_b))
+			good_state_b = false;
+		else
+			good_state_a = false;
+	}
+
+        // Use data from the most recent state file
+	if (good_state_a && !good_state_b)
+	{
+		*K = K_a;
+		*ITER = ITER_a;
+		result_hash = hash_a;
+		last_trickle = (time_t)trickle_a;
+		write_state_a_next = false;
 		return 1;
 	}
+        if (good_state_b && !good_state_a)
+        {
+                *K = K_b;
+                *ITER = ITER_b;
+                result_hash = hash_b;
+                last_trickle = (time_t)trickle_b;
+		write_state_a_next = true;
+		return 1;
+        }
 
+	// If we got here, neither state file was good
 	return 0;
 }
 
@@ -727,6 +804,7 @@ int main(int argc, char *argv[])
 		ITER = 0;
 		result_hash = 0; // zero result hash for BOINC
                 last_trickle = time(NULL); // Start trickle timer
+                write_state_a_next = true;
 	}
 
 #ifdef AP26_OPENCL
