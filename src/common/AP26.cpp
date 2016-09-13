@@ -379,8 +379,6 @@ static void write_state(int KMIN, int KMAX, int SHIFT, int K, int ITER)
 		// next time round
 		if (fclose(out) == 0) write_state_a_next != write_state_a_next; 
 	}
-
-	fclose(out);
 }
 
 /* Return 1 only if a valid checkpoint can be read.
