@@ -1,4 +1,4 @@
-CC = gcc
+CC = MACOSX_DEPLOYMENT_TARGET=10.5 gcc
 LD = $(CC)
 
 APP = ap26_cpu_macintel64
