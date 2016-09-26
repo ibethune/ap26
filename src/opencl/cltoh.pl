@@ -22,7 +22,7 @@ print <<EOF;
 #ifndef $guard
 #define $guard
 
-static char* $varname= \\
+static const char* $varname= \\
 EOF
 
 while(<>) {

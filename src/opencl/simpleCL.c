@@ -212,13 +212,13 @@ char* _sclLoadProgramSource( const char *filename )
 	return source; 
 }
  
-cl_program _sclCreateProgram( char* program_source, cl_context context )
+cl_program _sclCreateProgram( const char* program_source, cl_context context )
 {
 	cl_program program;
 
 	cl_int err;
 	
-	program = clCreateProgramWithSource( context, 1, (const char**)&program_source, NULL, &err );
+	program = clCreateProgramWithSource( context, 1, &program_source, NULL, &err );
 	if ( err!=CL_SUCCESS ) {
 		printf( "Error on createProgram" );
 		sclPrintErrorFlags( err );
@@ -356,7 +356,7 @@ unsigned long int _sclGetMaxGlobalMemSize( cl_device_id device ){
 
 
 // Bryan Little added opt flag to turn on/off optimizations during kernel compile
-sclSoft sclGetCLSoftware( char* source, char* name, sclHard hardware, int opt ){
+sclSoft sclGetCLSoftware( const char* source, const char* name, sclHard hardware, int opt ){
 
 	sclSoft software;
 
