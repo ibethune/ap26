@@ -2,7 +2,7 @@
 
 // AP26 application version
 #define MAJORV 1
-#define MINORV 4
+#define MINORV 5
 //#define SUFFIXV ""
 #define SUFFIXV "-dev"
 
@@ -67,7 +67,7 @@
 // actual numn used is usually < 100,000 we use 1,000,000 here to prevent overflowing the array
 # define numn 1000000
 # define numOK 23693
-# define sol 1024
+# define sol 10240
 
 # define NVIDIA 1
 # define GENERIC 0
@@ -773,6 +773,16 @@ int main(int argc, char *argv[])
 	if (read_state(KMIN,KMAX,SHIFT,&K,&ITER)){
 		printf("Resuming search from checkpoint.\n");
 		fprintf(stderr,"Resuming from checkpoint. K: %d ITER: %d\n",K,ITER);
+#ifdef AP26_OPENCL
+		if(ITER != 0){
+			printf("Checkpoint was from a different version. Restarting workunit.\n");	
+			fprintf(stderr,"Checkpoint was from a different version. Restarting workunit.\n");
+			K = KMIN;
+			ITER = 0;
+			result_hash = 0; // zero result hash for BOINC
+			last_trickle = time(NULL); // Start trickle timer
+		}
+#endif
 #ifdef AP26_CPU
 		if(avx || avx2){
 			if(ITER != 0 && ITER != 4 && ITER != 8){
@@ -851,6 +861,10 @@ int main(int argc, char *argv[])
 
                 printf("compiling checkn\n");
                 checkn = sclGetCLSoftware(checkn_cl,"checkn",hardware, 1);
+
+                sieve_ls = 1024;
+                printf("local workgroup size for sieve kernel is 1024 threads\n");
+                fprintf(stderr,"Using Nvidia local memory cache. Work size is 1024.\n");
         }
         else{
                 printf("compiling sieve\n");
@@ -861,39 +875,14 @@ int main(int argc, char *argv[])
 
                 printf("compiling checkn\n");
                 checkn = sclGetCLSoftware(checkn_cl,"checkn",hardware, 0);              // AMD's compiler breaks the kernel with optimize on
+
+                sieve_ls = 64;
+                printf("local workgroup size for sieve kernel is 64 threads\n");
+                fprintf(stderr,"Not using local memory cache. Work size is 64.\n");
         }
 
         printf("compiling done\n");
         // End Init
-
-        // query max local size for kernel on device
-        // local memory nvidia kernel only works on devices that can have 1024 thread local size
-        size_t local;
-        err = clGetKernelWorkGroupInfo(sieve.kernel, hardware.device, CL_KERNEL_WORK_GROUP_SIZE, sizeof(local), &local, NULL);
-        if ( err != CL_SUCCESS ) {
-                printf( "Error checking local size of kernel on device. " );
-                exit(EXIT_FAILURE);
-        }
-        unsigned int maxlocal = (unsigned int)local;
-
-        if(GPU==NVIDIA){
-                // today's gpus use 1024 max, future may use more?
-                if(maxlocal >= 1024){
-                        sieve_ls = 1024;
-                        printf("local workgroup size for sieve kernel is 1024 threads\n");
-                }
-                else{
-                        printf( "selected NVIDIA GPU does not support 1024 thread local size.  Reverting to generic kernel." );
-                        sieve = sclGetCLSoftware(sieve_cl,"sieve",hardware, 1);
-                        sieve_ls = 64;
-                        printf("local workgroup size for sieve kernel is 64 threads\n");
-                }
-        }
-
-        else{
-                sieve_ls = 64;
-                printf("local workgroup size for sieve kernel is 64 threads\n");
-        }
 
 
         // memory allocation
@@ -967,6 +956,8 @@ int main(int argc, char *argv[])
 
 	/* Write BOINC hash to file */
 	write_hash();
+
+	fprintf(stderr,"Workunit complete.\n");
 
 #ifdef AP26_BOINC
 	boinc_end_critical_section();

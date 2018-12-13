@@ -96,10 +96,10 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 	struct timespec proftime, pstime, petime;
 
-	time_t total_start_time, total_finish_time;
+	//time_t total_start_time, total_finish_time;
 	time_t last_time, curr_time;
 
-	time (&total_start_time);
+	//time (&total_start_time);
 	time (&last_time);
 
 
@@ -181,8 +181,8 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 	for(SHIFT=startSHIFT+(iter*64); SHIFT<(startSHIFT+640); SHIFT+=64){
 
-		time_t start_time, finish_time;
-		time (&start_time);
+		//time_t start_time, finish_time;
+		//time (&start_time);
 
 		int numinq=0;
 
@@ -325,32 +325,28 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		// sleep CPU thread while GPU is busy
 		sleepcpu();
 
-		// copy results to host memory
-		// blocking read
-		sclRead(hardware, sol * sizeof(int), sol_k_d, sol_k_h);
-		sclRead(hardware, sol * sizeof(int64_t), sol_val_d, sol_val_h);
-
-
-		int e=0;
-		while(sol_k_h[e] != 0){
-			ReportSolution(sol_k_h[e],K,sol_val_h[e]);
-			e++;
-		}
-
-
-
-		printf("Computation for K: %d SHIFT: %d complete.\n", K, SHIFT);
-
-		time(&finish_time);
-		printf("GPU time was %d seconds\n", (int)finish_time - (int)start_time);
+		//printf("Computation for K: %d SHIFT: %d complete.\n", K, SHIFT);
+		//time(&finish_time);
+		//printf("GPU time was %d seconds\n", (int)finish_time - (int)start_time);
 
 		iter++;
-		if(iter<10){
-			checkpoint(startSHIFT,K,0,iter);
-		}
+
 	}
 
-	time(&total_finish_time);
-	printf("total GPU time for K was %d seconds\n", (int)total_finish_time - (int)total_start_time);
+
+	// copy results to host memory
+	// blocking read
+	sclRead(hardware, sol * sizeof(int), sol_k_d, sol_k_h);
+	sclRead(hardware, sol * sizeof(int64_t), sol_val_d, sol_val_h);
+
+
+	int e=0;
+	while(sol_k_h[e] != 0){
+		ReportSolution(sol_k_h[e],K,sol_val_h[e]);
+		e++;
+	}
+
+	//time(&total_finish_time);
+	//printf("total GPU time for K was %d seconds\n", (int)total_finish_time - (int)total_start_time);
 
 }
