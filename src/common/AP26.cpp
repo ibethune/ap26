@@ -2,7 +2,7 @@
 
 // AP26 application version
 #define MAJORV 1
-#define MINORV 5
+#define MINORV 6
 //#define SUFFIXV ""
 #define SUFFIXV "-dev"
 
