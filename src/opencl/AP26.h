@@ -176,6 +176,14 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	sclEnqueueKernel(hardware, offset, global_size, local_size);
 	// end offset
 
+	// clearsol kernel
+	global_size[0]=10240; global_size[1]=1;
+	local_size[0]=64; local_size[1]=1;
+	sclSetKernelArg(clearsol, 0, sizeof(cl_mem), &sol_k_d);
+	sclSetKernelArg(clearsol, 1, sizeof(cl_mem), &solcount_d);
+	sclEnqueueKernel(hardware, clearsol, global_size, local_size);
+	// end clearsol
+
 
 	int SHIFT;
 
@@ -216,15 +224,6 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		sclSetKernelArg(setupokok, 4, sizeof(cl_mem), &offset_d);
 		sclEnqueueKernel(hardware, setupokok, global_size, local_size);
 		// end setupokok
-
-
-		// clearsol kernel
-		global_size[0]=1024; global_size[1]=1;
-		local_size[0]=64; local_size[1]=1;
-		sclSetKernelArg(clearsol, 0, sizeof(cl_mem), &sol_k_d);
-		sclSetKernelArg(clearsol, 1, sizeof(cl_mem), &solcount_d);
-		sclEnqueueKernel(hardware, clearsol, global_size, local_size);
-		// end clearsol
 
 
 		// kernel config for sieve
