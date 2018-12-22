@@ -269,12 +269,12 @@ cl_kernel _sclCreateKernel( sclSoft software ) {
 }
 
 
-// Bryan Little - not using events
+// Bryan Little - not using events.. and 3D workgroup sizes
 void sclEnqueueKernel( sclHard hardware, sclSoft software, size_t *global_work_size, size_t *local_work_size) {
 
 	cl_int err;
 
-	err = clEnqueueNDRangeKernel( hardware.queue, software.kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL );
+	err = clEnqueueNDRangeKernel( hardware.queue, software.kernel, 3, NULL, global_work_size, local_work_size, 0, NULL, NULL );
 	if ( err != CL_SUCCESS ) {
 		printf( "\nError on EnqueueKernel %s", software.kernelName );
 		sclPrintErrorFlags(err); 
@@ -377,6 +377,48 @@ sclSoft sclGetCLSoftware( const char* source, const char* name, sclHard hardware
 	 ########################################################################## */
 	software.kernel = _sclCreateKernel( software );
 	/* ########################################################################## */
+
+
+
+	cl_int err;
+	size_t workgroupsize;
+	cl_ulong localmem;
+	size_t multiple;
+	size_t override[3];
+
+	err = clGetKernelWorkGroupInfo( software.kernel, hardware.device, CL_KERNEL_WORK_GROUP_SIZE, sizeof(size_t), &workgroupsize, NULL);
+
+	if ( err != CL_SUCCESS ) {
+		printf( "\nError getting kernel workgroup size\n");
+		sclPrintErrorFlags(err); 
+	}
+
+	err = clGetKernelWorkGroupInfo( software.kernel, hardware.device, CL_KERNEL_LOCAL_MEM_SIZE, sizeof(cl_ulong), &localmem, NULL);
+
+	if ( err != CL_SUCCESS ) {
+		printf( "\nError getting kernel local memory used\n");
+		sclPrintErrorFlags(err); 
+	}
+
+	err = clGetKernelWorkGroupInfo( software.kernel, hardware.device, CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, sizeof(size_t), &multiple, NULL);
+
+	if ( err != CL_SUCCESS ) {
+		printf( "\nError getting kernel multiple\n");
+		sclPrintErrorFlags(err); 
+	}
+
+	err = clGetKernelWorkGroupInfo( software.kernel, hardware.device, CL_KERNEL_COMPILE_WORK_GROUP_SIZE, sizeof(size_t[3]), &override, NULL);
+
+	if ( err != CL_SUCCESS ) {
+		printf( "\nError getting kernel source code workgroup size override\n");
+		sclPrintErrorFlags(err); 
+	}
+
+
+	printf("Kernel workgroup size: %u\nKernel local memory used: %u\nCL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE: %u\nKernel source code local size override: %u,%u,%u\n"
+		, (unsigned int)workgroupsize, (unsigned int)localmem, (unsigned int)multiple, (unsigned int)override[0], (unsigned int)override[1], (unsigned int)override[2]);
+ 
+
 
 	return software;
 	

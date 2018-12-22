@@ -85,8 +85,8 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	int i43, i47, i53;
 	int i3, i5, i31, i37, i41;
 	int64_t S31, S37, S41, S43, S47, S53, S59;
-        size_t global_size[2];
-        size_t local_size[2];
+        size_t global_size[3];
+        size_t local_size[3];
 	int profile=1;
 	int profileq;
 	double d = (double)1.0 / (K_COUNT*880);
@@ -94,12 +94,18 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	int iter = ITER;
 	int progress = iter * 88;
 
+	// only using 1D workgroup sizes
+	global_size[1]=1;
+	local_size[1]=1;
+	global_size[2]=1;
+	local_size[2]=1;
+
 	struct timespec proftime, pstime, petime;
 
-	//time_t total_start_time, total_finish_time;
+	time_t total_start_time, total_finish_time;
 	time_t last_time, curr_time;
 
-	//time (&total_start_time);
+	time (&total_start_time);
 	time (&last_time);
 
 
@@ -126,7 +132,7 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	if(i41-i31<=14&&i41-i37<=14&&i31-i41<=4&&i37-i41<=10)
 	for(i3=0;i3<2;++i3)
 	for(i5=0;i5<4;++i5){ 
-		n43=(n0+i3*S3+i5*S5+i31*S31+i37*S37+i41*S41)%MOD;
+		n43=(n0+i3*S3+i5*S5+i31*S31+i37*S37+i41*S41)%MOD;  //10840 of these
 		for(i43=(PRIME5-24);i43>0;i43--){
 			n47=n43;
 			for(i47=(PRIME6-24);i47>0;i47--){
@@ -170,15 +176,15 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 
 	// offset kernel
-        global_size[0]=576; global_size[1]=1;
-        local_size[0]=64; local_size[1]=1;
+        global_size[0]=576;
+        local_size[0]=64;
 	sclSetKernelArg(offset, 0, sizeof(cl_mem), &offset_d);
 	sclEnqueueKernel(hardware, offset, global_size, local_size);
 	// end offset
 
 	// clearsol kernel
-	global_size[0]=10240; global_size[1]=1;
-	local_size[0]=64; local_size[1]=1;
+	global_size[0]=10240;  
+	local_size[0]=64; 
 	sclSetKernelArg(clearsol, 0, sizeof(cl_mem), &sol_k_d);
 	sclSetKernelArg(clearsol, 1, sizeof(cl_mem), &solcount_d);
 	sclEnqueueKernel(hardware, clearsol, global_size, local_size);
@@ -189,14 +195,11 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 	for(SHIFT=startSHIFT+(iter*64); SHIFT<(startSHIFT+640); SHIFT+=64){
 
-		//time_t start_time, finish_time;
-		//time (&start_time);
-
 		int numinq=0;
 
 		// clearok kernel
-		global_size[0]=23744; global_size[1]=1;
-		local_size[0]=64; local_size[1]=1;
+		global_size[0]=23744; 
+		local_size[0]=64; 
 		sclSetKernelArg(clearok, 0, sizeof(cl_mem), &OK_d);
 		sclSetKernelArg(clearok, 1, sizeof(cl_mem), &OKOK_d);
 		sclEnqueueKernel(hardware, clearok, global_size, local_size);
@@ -204,8 +207,8 @@ void SearchAP26(int K, int startSHIFT, int ITER)
  
 
 		// setok kernel
-		global_size[0]=576; global_size[1]=1;
-		local_size[0]=64; local_size[1]=1;
+		global_size[0]=576; 
+		local_size[0]=64; 
 		sclSetKernelArg(setok, 0, sizeof(int64_t), &STEP);
 		sclSetKernelArg(setok, 1, sizeof(int), &SHIFT);
 		sclSetKernelArg(setok, 2, sizeof(cl_mem), &OK_d);
@@ -215,8 +218,8 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 
 		// setupokok kernel
-		global_size[0]=576; global_size[1]=1;
-		local_size[0]=64; local_size[1]=1;
+		global_size[0]=576; 
+		local_size[0]=64; 
 		sclSetKernelArg(setupokok, 0, sizeof(int64_t), &STEP);
 		sclSetKernelArg(setupokok, 1, sizeof(int), &SHIFT);
 		sclSetKernelArg(setupokok, 2, sizeof(cl_mem), &OK_d);
@@ -267,17 +270,23 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 				sclSetKernelArg(sieve, 4, sizeof(cl_mem), &OKOK_d);
 				sclSetKernelArg(sieve, 5, sizeof(cl_mem), &ncount_d);
 				sclSetKernelArg(sieve, 6, sizeof(int), &p);
-				global_size[0]=worksize; global_size[1]=1;
-				local_size[0]=sieve_ls; local_size[1]=1;
+				global_size[0]=worksize; 
+				local_size[0]=sieve_ls; 
 				sclEnqueueKernel(hardware, sieve, global_size, local_size);
 				// end sieve
 
-	/*			int* numbern;
+
+/*
+
+				int* numbern;
 				numbern = (int*)malloc(sizeof(int));
 				sclRead(hardware, sizeof(int), ncount_d, numbern);
 				printf("narray size: %d of max %d\n",numbern[0],numn);
 				free(numbern);
-	*/
+	
+*/
+
+
 				// checkn kernel
 				sclSetKernelArg(checkn, 0, sizeof(cl_mem), &n_result_d);
 				sclSetKernelArg(checkn, 1, sizeof(int64_t), &STEP);
@@ -285,8 +294,8 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 				sclSetKernelArg(checkn, 3, sizeof(cl_mem), &sol_val_d);
 				sclSetKernelArg(checkn, 4, sizeof(cl_mem), &ncount_d);
 				sclSetKernelArg(checkn, 5, sizeof(cl_mem), &solcount_d);
-				global_size[0]=numn; global_size[1]=1;
-				local_size[0]=64; local_size[1]=1;
+				global_size[0]=numn;  
+				local_size[0]=64; 
 				sclEnqueueKernel(hardware, checkn, global_size, local_size);
 				// end checkn
 
@@ -324,10 +333,6 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		// sleep CPU thread while GPU is busy
 		sleepcpu();
 
-		//printf("Computation for K: %d SHIFT: %d complete.\n", K, SHIFT);
-		//time(&finish_time);
-		//printf("GPU time was %d seconds\n", (int)finish_time - (int)start_time);
-
 		iter++;
 
 	}
@@ -345,7 +350,8 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		e++;
 	}
 
-	//time(&total_finish_time);
-	//printf("total GPU time for K was %d seconds\n", (int)total_finish_time - (int)total_start_time);
+	time(&total_finish_time);
+	fprintf(stderr, "K %d done in %d sec\n",K,(int)total_finish_time - (int)total_start_time);
+
 
 }

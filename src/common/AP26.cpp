@@ -1,10 +1,10 @@
 // Common code to both CPU and OpenCL versions 
 
 // AP26 application version
-#define MAJORV 1
-#define MINORV 6
+#define MAJORV 2
+#define MINORV 2
 //#define SUFFIXV ""
-#define SUFFIXV "-dev"
+#define SUFFIXV "dev"
 
 #ifdef AP26_OPENCL
 # define TARGET "OpenCL"
@@ -175,14 +175,19 @@ sclHard sclGetBOINCHardware( int argc, char** argv ) {
 	hardware.queue = queue;
 	hardware.context = context;
 
-	clGetPlatformInfo( hardware.platform, CL_PLATFORM_NAME, sizeof(cl_char)*1024, platformName, NULL );	
-	clGetPlatformInfo( hardware.platform, CL_PLATFORM_VENDOR, sizeof(cl_char)*1024, platformVendor, NULL );
-	clGetDeviceInfo( hardware.device, CL_DEVICE_NAME, sizeof(cl_char)*1024, deviceName, NULL );
-	fprintf(stderr, "GPU Info:\n  Platform name: %s\n  Vendor: %s\n  Device name: %s\n", platformName, platformVendor, deviceName );
-        int64_t gmem = (int64_t)_sclGetMaxGlobalMemSize(hardware.device);
-        int64_t maxalloc = (int64_t)_sclGetMaxMemAllocSize(hardware.device);
-        fprintf(stderr, "  GPU RAM:        %" INT64_FORMAT "\n", gmem);
-        fprintf(stderr, "  GPU max malloc: %" INT64_FORMAT "\n", maxalloc);
+
+ 	char device_string0[1024];
+ 	char device_string1[1024];
+ 	char device_string2[1024];
+
+	clGetDeviceInfo(hardware.device, CL_DEVICE_NAME, sizeof(device_string0), &device_string0, NULL);
+
+	clGetDeviceInfo(hardware.device, CL_DEVICE_VENDOR, sizeof(device_string1), &device_string1, NULL);
+
+	clGetDeviceInfo(hardware.device, CL_DRIVER_VERSION, sizeof(device_string2), &device_string2, NULL);
+
+	fprintf(stderr, "GPU Info:\n  Name: \t%s\n  Vendor: \t%s\n  Driver: \t%s\n", device_string0, device_string1, device_string2 );
+
 
 	clRetainCommandQueue( hardware.queue );
 	clRetainContext( hardware.context );
