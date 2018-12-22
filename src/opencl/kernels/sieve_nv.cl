@@ -10,8 +10,7 @@
 #define MOD 258559632607830L
 
 
-__kernel __attribute__((reqd_work_group_size(1024, 1, 1)))
-void sieve(__global long *n59, long S59, int shift, __global long *n_result, __global long *OKOK, __global int *ncount, int offset
+__kernel void sieve(__global long *n59, long S59, int shift, __global long *n_result, __global long *OKOK, __global int *ncount, int offset
 ){
 
 	int i = get_global_id(0);

@@ -379,7 +379,7 @@ sclSoft sclGetCLSoftware( const char* source, const char* name, sclHard hardware
 	/* ########################################################################## */
 
 
-
+/*
 	cl_int err;
 	size_t workgroupsize;
 	cl_ulong localmem;
@@ -417,7 +417,7 @@ sclSoft sclGetCLSoftware( const char* source, const char* name, sclHard hardware
 
 	printf("Kernel workgroup size: %u\nKernel local memory used: %u\nCL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE: %u\nKernel source code local size override: %u,%u,%u\n"
 		, (unsigned int)workgroupsize, (unsigned int)localmem, (unsigned int)multiple, (unsigned int)override[0], (unsigned int)override[1], (unsigned int)override[2]);
- 
+ */
 
 
 	return software;
