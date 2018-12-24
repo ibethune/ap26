@@ -113,7 +113,12 @@ __kernel void sieve(__global long *n59, long S59, int shift, __global long *n_re
 			if(sito &= OKOK[ ((n59a+335*n59b)%523) + 22629 ]
 				& OKOK[ ((n59a+189*n59b)%541) + 23152 ]){
 				int b;
-				for(b=0;b<64;b++){
+				int bLimit, bStart;
+
+				bLimit = 63 - clz(sito);
+				bStart = 63 - clz(sito&-sito);	// this is ctz
+
+				for (b = bStart; b <= bLimit; b++){
 					if((sito>>b)&1){
 
 						int na, nb, nc, tmp1, tmp2;
