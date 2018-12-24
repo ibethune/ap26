@@ -95,8 +95,6 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	int progress = iter * 88;
 
 //	int64_t totaln=0;
-	int qlen=0;
-	int qcnt=0;
 
 	// only using 1D workgroup sizes
 	global_size[1]=1;
@@ -321,9 +319,6 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 					}
 					//fprintf(stderr, "kernel queue length: %d\n",profileq);
 					profile=0;
-
-					qlen+=profileq;
-					qcnt++;
 				}				
 				else{
 					numinq++;
@@ -360,7 +355,7 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	}
 
 	time(&total_finish_time);
-	fprintf(stderr, "K %d done in %d sec. Avg kernel queue: %f\n", K, (int)total_finish_time - (int)total_start_time, (float)qlen/(float)qcnt);
+	fprintf(stderr, "K %d done in %d sec. Kernel queue: %d\n", K, (int)total_finish_time - (int)total_start_time, profileq);
 
 //	printf("total n for K: %" INT64_FORMAT "\n",totaln);  // for K 366384 this should be 38838420
 
