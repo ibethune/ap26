@@ -81,8 +81,7 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 	int64_t STEP;
 	int64_t n0;
-	int64_t n43, n47, n53;
-	int i43, i47, i53;
+
 	int i3, i5, i31, i37, i41;
 	int64_t S31, S37, S41, S43, S47, S53, S59;
         size_t global_size[3];
@@ -125,7 +124,6 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	// note: n53MAX == 137375320
 
 	int count=0;
-	int devicearray=0;
 
 	for(i31=0;i31<7;++i31)
 	for(i37=0;i37<13;++i37)
@@ -134,48 +132,25 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	if(i41-i31<=14&&i41-i37<=14&&i31-i41<=4&&i37-i41<=10)
 	for(i3=0;i3<2;++i3)
 	for(i5=0;i5<4;++i5){ 
-		n43=(n0+i3*S3+i5*S5+i31*S31+i37*S37+i41*S41)%MOD;  //10840 of these
-		for(i43=(PRIME5-24);i43>0;i43--){
-			n47=n43;
-			for(i47=(PRIME6-24);i47>0;i47--){
-				n53=n47;
-				for(i53=(PRIME7-24);i53>0;i53--){
-					//n59=n53;
-
-					n59_h[count]=n53;
-					count++;
-					if(count == quartern59s){
-						if(devicearray == 0){
-							// offload to gpu, blocking
-							sclWrite(hardware, quartern59s * sizeof(int64_t), n59_0_d, n59_h);
-						}
-						else if(devicearray == 1){
-							// offload to gpu, blocking
-							sclWrite(hardware, quartern59s * sizeof(int64_t), n59_1_d, n59_h);
-						}
-						else if(devicearray == 2){
-							// offload to gpu, blocking
-							sclWrite(hardware, quartern59s * sizeof(int64_t), n59_2_d, n59_h);
-						}
-						else if(devicearray == 3){
-							// offload to gpu, blocking
-							sclWrite(hardware, quartern59s * sizeof(int64_t), n59_3_d, n59_h);
-						}
-						devicearray++;
-						count=0;
-					}
-
-					n53+=S53;
-					if(n53>=MOD)n53-=MOD;
-				}
-				n47+=S47;
-				if(n47>=MOD)n47-=MOD;
-			}
-			n43+=S43;
-			if(n43>=MOD)n43-=MOD;
-		}
+		n43_h[count]=(n0+i3*S3+i5*S5+i31*S31+i37*S37+i41*S41)%MOD;  //10840 of these  12673 n53 per
+		count++;
 	}
 
+	// offload to gpu, blocking
+	sclWrite(hardware, numn43s * sizeof(int64_t), n43_d, n43_h);
+	printf( "n43 array copy to GPU complete\n");		
+
+	// setup n59s kernel
+        global_size[0]=10880;
+        local_size[0]=64;
+	sclSetKernelArg(setupn, 0, sizeof(cl_mem), &n43_d);
+	sclSetKernelArg(setupn, 1, sizeof(cl_mem), &n59_0_d);
+	sclSetKernelArg(setupn, 2, sizeof(cl_mem), &n59_1_d);
+	sclSetKernelArg(setupn, 3, sizeof(int64_t), &S53);
+	sclSetKernelArg(setupn, 4, sizeof(int64_t), &S47);
+	sclSetKernelArg(setupn, 5, sizeof(int64_t), &S43);
+	sclEnqueueKernel(hardware, setupn, global_size, local_size);
+	// end setup n59s
 
 	// offset kernel
         global_size[0]=576;
@@ -235,8 +210,8 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 		const int worksize=1571840;	// must be divisible by 64 and 1024
 		int p;
 
-		for(devicearray=0; devicearray<4; devicearray++){
-			for( p=0; p<quartern59s; p+=worksize ){
+		for(int devicearray=0; devicearray<2; devicearray++){
+			for( p=0; p<halfn59s; p+=worksize ){
 
 				// update BOINC progress every 2 sec
 				// 88x
@@ -259,12 +234,6 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 				}
 				else if(devicearray == 1){
 					sclSetKernelArg(sieve, 0, sizeof(cl_mem), &n59_1_d);
-				}
-				else if(devicearray == 2){
-					sclSetKernelArg(sieve, 0, sizeof(cl_mem), &n59_2_d);
-				}
-				else if(devicearray == 3){
-					sclSetKernelArg(sieve, 0, sizeof(cl_mem), &n59_3_d);
 				}
 				sclSetKernelArg(sieve, 1, sizeof(int64_t), &S59);
 				sclSetKernelArg(sieve, 2, sizeof(int), &SHIFT);

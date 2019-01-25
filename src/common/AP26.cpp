@@ -2,7 +2,7 @@
 
 // AP26 application version
 #define MAJORV 2
-#define MINORV 3
+#define MINORV 4
 //#define SUFFIXV ""
 #define SUFFIXV ""
 
@@ -57,12 +57,14 @@
 # include "clearsol.h"
 # include "offset.h"
 # include "setok.h"
+# include "setupn.h"
 # include "setupokok.h"
 # include "sieve.h"
 # include "sieve_nv.h"
 
 # define numn59s 	137375320
-# define quartern59s 	34343830
+# define halfn59s	68687660
+# define numn43s	10840
 
 // actual numn used is usually < 100,000 we use 1,000,000 here to prevent overflowing the array
 # define numn 1000000
@@ -118,12 +120,13 @@ sclSoft checkn;
 sclSoft setok;
 sclSoft setupokok;
 sclSoft sieve;
+sclSoft setupn;
 
-int64_t *n59_h;
+int64_t *n43_h;
 int *sol_k_h;
 int64_t *sol_val_h;
 cl_mem ncount_d, solcount_d, n_result_d, OKOK_d, OK_d, offset_d, sol_k_d, sol_val_d;
-cl_mem n59_0_d, n59_1_d, n59_2_d, n59_3_d;
+cl_mem n43_d, n59_0_d, n59_1_d;
 
 int sieve_ls;
 
@@ -856,6 +859,9 @@ int main(int argc, char *argv[])
         printf("compiling setok\n");
         setok = sclGetCLSoftware(setok_cl,"setok",hardware, 1);
 
+        printf("compiling setupn\n");
+        setupn = sclGetCLSoftware(setupn_cl,"setupn",hardware, 1);
+
 
         if(GPU == NVIDIA){
                 printf("compiling sieve for NVIDIA GPU\n");
@@ -892,14 +898,13 @@ int main(int argc, char *argv[])
 
         // memory allocation
         // host memory
-        n59_h = (int64_t*)malloc(quartern59s * sizeof(int64_t));
+        n43_h = (int64_t*)malloc(numn43s * sizeof(int64_t));
         sol_k_h = (int*)malloc(sol * sizeof(int));
         sol_val_h = (int64_t*)malloc(sol * sizeof(int64_t));
         // device memory
-        n59_0_d = sclMalloc(hardware, CL_MEM_READ_WRITE, quartern59s * sizeof(int64_t));
-        n59_1_d = sclMalloc(hardware, CL_MEM_READ_WRITE, quartern59s * sizeof(int64_t));
-        n59_2_d = sclMalloc(hardware, CL_MEM_READ_WRITE, quartern59s * sizeof(int64_t));
-        n59_3_d = sclMalloc(hardware, CL_MEM_READ_WRITE, quartern59s * sizeof(int64_t));
+        n43_d = sclMalloc(hardware, CL_MEM_READ_WRITE, numn43s * sizeof(int64_t));
+        n59_0_d = sclMalloc(hardware, CL_MEM_READ_WRITE, halfn59s * sizeof(int64_t));
+        n59_1_d = sclMalloc(hardware, CL_MEM_READ_WRITE, halfn59s * sizeof(int64_t));
         ncount_d = sclMalloc(hardware, CL_MEM_READ_WRITE, sizeof(int));
         solcount_d = sclMalloc(hardware, CL_MEM_READ_WRITE, sizeof(int));
         n_result_d = sclMalloc(hardware, CL_MEM_READ_WRITE, numn * sizeof(int64_t));
@@ -972,16 +977,15 @@ int main(int argc, char *argv[])
 #ifdef AP26_OPENCL
         // free memory
         // host
-        free(n59_h);
+        free(n43_h);
         free(sol_k_h);
         free(sol_val_h);
         // device
         sclReleaseMemObject(ncount_d);
         sclReleaseMemObject(solcount_d);
+        sclReleaseMemObject(n43_d);
         sclReleaseMemObject(n59_0_d);
         sclReleaseMemObject(n59_1_d);
-        sclReleaseMemObject(n59_2_d);
-        sclReleaseMemObject(n59_3_d);
         sclReleaseMemObject(n_result_d);
         sclReleaseMemObject(OK_d);
         sclReleaseMemObject(OKOK_d);
@@ -997,6 +1001,7 @@ int main(int argc, char *argv[])
         sclReleaseClSoft(setok);
         sclReleaseClSoft(setupokok);
         sclReleaseClSoft(sieve);
+        sclReleaseClSoft(setupn);
 
         sclReleaseClHard(hardware);
 

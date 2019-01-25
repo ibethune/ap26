@@ -6,7 +6,7 @@
 */
 
 
-#define quartern59s 34343830
+#define halfn59s 68687660
 #define MOD 258559632607830L
 
 
@@ -33,7 +33,7 @@ __kernel void sieve(__global long *n59, long S59, int shift, __global long *n_re
 	}
 	barrier(CLK_LOCAL_MEM_FENCE); 
 
-	if(i+offset < quartern59s){
+	if(i+offset < halfn59s){
 
 		long sito;
 		long n59_local = n59[i+offset];
