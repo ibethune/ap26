@@ -3,7 +3,6 @@
 	***************
 	Bryan Little Jun 30 2016
 	+ Using ~1.1GB VRAM on GPU
-	+ Using <400MB RAM on host
 	+ This is code tuned for Nvidia and AMD GPU OpenCL devices.
 	+ Limit kernel queue depth to .1 sec to improve screen refresh
 
@@ -76,7 +75,7 @@ struct timespec diff(struct timespec start, struct timespec end)
 }
 
 
-void SearchAP26(int K, int startSHIFT, int ITER)
+void SearchAP26(int K, int startSHIFT, int s_local, int compute)
 { 
 
 	int64_t STEP;
@@ -88,10 +87,10 @@ void SearchAP26(int K, int startSHIFT, int ITER)
         size_t local_size[3];
 	int profile=1;
 	int profileq;
+	int numinq=0;
 	double d = (double)1.0 / (K_COUNT*880);
 	double dd;
-	int iter = ITER;
-	int progress = iter * 88;
+	int progress = 0;
 
 //	int64_t totaln=0;
 
@@ -170,9 +169,8 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 	int SHIFT;
 
-	for(SHIFT=startSHIFT+(iter*64); SHIFT<(startSHIFT+640); SHIFT+=64){
+	for(SHIFT=startSHIFT; SHIFT<(startSHIFT+640); SHIFT+=64){
 
-		int numinq=0;
 
 		// clearok kernel
 		global_size[0]=23744; 
@@ -242,7 +240,7 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 				sclSetKernelArg(sieve, 5, sizeof(cl_mem), &ncount_d);
 				sclSetKernelArg(sieve, 6, sizeof(int), &p);
 				global_size[0]=worksize; 
-				local_size[0]=sieve_ls; 
+				local_size[0]=s_local; 
 				sclEnqueueKernel(hardware, sieve, global_size, local_size);
 				// end sieve
 
@@ -274,19 +272,31 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 
 				if(profile){
-					// kernel profile to limit ocl queue to less than .1 sec
+					// kernel profile
 					sclFinish(hardware);
 					clock_gettime(CLOCK_MONOTONIC, &petime);
 					proftime = diff(pstime,petime);
-					//fprintf(stderr, "kernel profile (sec): %d, (nanoseconds): %d\n", proftime.tv_sec, proftime.tv_nsec);
 					int64_t totalnano = (proftime.tv_sec * 1000000000) + proftime.tv_nsec;
-					if(totalnano < 100000000){
-						profileq = 100000000 / totalnano;
+
+					if(compute){
+						// compute mode will queue up kernels to run for up to 1 second
+						if(totalnano < 1000000000){
+							profileq = 1000000000 / totalnano;
+						}
+						else{
+							profileq = 1;
+						}
 					}
 					else{
-						profileq = 1;
+						// limit ocl queue to less than .1 sec
+						if(totalnano < 100000000){
+							profileq = 100000000 / totalnano;
+						}
+						else{
+							profileq = 1;
+						}
 					}
-					//fprintf(stderr, "kernel queue length: %d\n",profileq);
+
 					profile=0;
 				}				
 				else{
@@ -303,13 +313,11 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 
 		}
 
-		// sleep CPU thread while GPU is busy
-		sleepcpu();
-
-		iter++;
-
 	}
 
+
+	// sleep CPU thread while GPU is busy
+	sleepcpu();
 
 	// copy results to host memory
 	// blocking read
@@ -324,7 +332,13 @@ void SearchAP26(int K, int startSHIFT, int ITER)
 	}
 
 	time(&total_finish_time);
-	fprintf(stderr, "K %d done in %d sec. Kernel queue: %d\n", K, (int)total_finish_time - (int)total_start_time, profileq);
+
+	if(compute){
+		fprintf(stderr, "K %d done in %d sec. Kernel queue: %d (compute mode)\n", K, (int)total_finish_time - (int)total_start_time, profileq);
+	}
+	else{
+		fprintf(stderr, "K %d done in %d sec. Kernel queue: %d\n", K, (int)total_finish_time - (int)total_start_time, profileq);
+	}
 
 //	printf("total n for K: %" INT64_FORMAT "\n",totaln);  // for K 366384 this should be 38838420
 

@@ -2,7 +2,7 @@
 
 // AP26 application version
 #define MAJORV 2
-#define MINORV 4
+#define MINORV 5
 //#define SUFFIXV ""
 #define SUFFIXV ""
 
@@ -66,8 +66,10 @@
 # define halfn59s	68687660
 # define numn43s	10840
 
-// actual numn used is usually < 100,000 we use 1,000,000 here to prevent overflowing the array
-# define numn 1000000
+// actual numn used is usually < 100,000 we use 1,024,000 here to prevent overflowing the array
+// must be divisible by 64 and 1024
+# define numn 1024000
+
 # define numOK 23693
 # define sol 10240
 
@@ -127,8 +129,6 @@ int *sol_k_h;
 int64_t *sol_val_h;
 cl_mem ncount_d, solcount_d, n_result_d, OKOK_d, OK_d, offset_d, sol_k_d, sol_val_d;
 cl_mem n43_d, n59_0_d, n59_1_d;
-
-int sieve_ls;
 
 #endif
 
@@ -660,6 +660,7 @@ static int will_search(int K)
 int main(int argc, char *argv[])
 {
 	int i, K, SHIFT, ITER, GPU;
+	int computemode = 0;
 
         // Initialize BOINC
 #ifdef AP26_BOINC
@@ -735,46 +736,53 @@ int main(int argc, char *argv[])
 	else{
 		fprintf(stderr, "Assumed SSE2 CPU\n");
 	}
-
-	if(argc == 5){
-		if( strcmp(argv[4], "-sse2") == 0 ){
-			fprintf(stderr, "forcing SSE2 mode\n");
-			sse41 = 0;
-			avx = 0;
-			avx2 = 0;
-		}
-		else if( strcmp(argv[4], "-sse41") == 0 ){
-			fprintf(stderr, "forcing SSE4.1 mode\n");
-			if(sse41 == 0){
-				fprintf(stderr, "ERROR: CPU does not support SSE4.1 instructions!\n");
-				exit(EXIT_FAILURE);
+#endif
+	if(argc > 4){
+		for(int xv=4;xv<argc;xv++){
+			if( strcmp(argv[xv], "-compute") == 0 ){
+				computemode = 1;
+				fprintf(stderr, "Compute mode enabled.\n");
 			}
-			sse41 = 1;
-			avx = 0;
-			avx2 = 0;
-		}
-		else if( strcmp(argv[4], "-avx") == 0 ){
-			fprintf(stderr, "forcing AVX mode\n");
-			if(avx == 0){
-				fprintf(stderr, "ERROR: CPU does not support AVX instructions!\n");
-				exit(EXIT_FAILURE);
+#ifdef AP26_CPU
+			else if( strcmp(argv[xv], "-sse2") == 0 ){
+				fprintf(stderr, "forcing SSE2 mode\n");
+				sse41 = 0;
+				avx = 0;
+				avx2 = 0;
 			}
-			sse41 = 0;
-			avx = 1;
-			avx2 = 0;
-		}
-		else if( strcmp(argv[4], "-avx2") == 0 ){
-			fprintf(stderr, "forcing AVX2 mode\n");
-			if(avx2 == 0){
-				fprintf(stderr, "ERROR: CPU does not support AVX2 instructions!\n");
-				exit(EXIT_FAILURE);
+			else if( strcmp(argv[xv], "-sse41") == 0 ){
+				fprintf(stderr, "forcing SSE4.1 mode\n");
+				if(sse41 == 0){
+					fprintf(stderr, "ERROR: CPU does not support SSE4.1 instructions!\n");
+					exit(EXIT_FAILURE);
+				}
+				sse41 = 1;
+				avx = 0;
+				avx2 = 0;
 			}
-			sse41 = 0;
-			avx = 0;
-			avx2 = 1;
+			else if( strcmp(argv[xv], "-avx") == 0 ){
+				fprintf(stderr, "forcing AVX mode\n");
+				if(avx == 0){
+					fprintf(stderr, "ERROR: CPU does not support AVX instructions!\n");
+					exit(EXIT_FAILURE);
+				}
+				sse41 = 0;
+				avx = 1;
+				avx2 = 0;
+			}
+			else if( strcmp(argv[xv], "-avx2") == 0 ){
+				fprintf(stderr, "forcing AVX2 mode\n");
+				if(avx2 == 0){
+					fprintf(stderr, "ERROR: CPU does not support AVX2 instructions!\n");
+					exit(EXIT_FAILURE);
+				}
+				sse41 = 0;
+				avx = 0;
+				avx2 = 1;
+			}
+#endif
 		}
 	}
-#endif
 
 
 	/* Resume from checkpoint if there is one */
@@ -862,10 +870,31 @@ int main(int argc, char *argv[])
         printf("compiling setupn\n");
         setupn = sclGetCLSoftware(setupn_cl,"setupn",hardware, 1);
 
+	int sieve_ls;
 
         if(GPU == NVIDIA){
-                printf("compiling sieve for NVIDIA GPU\n");
-                sieve = sclGetCLSoftware(sieve_nv_cl,"sieve",hardware, 1);
+	 	cl_uint ccmajor;
+
+		err = clGetDeviceInfo(hardware.device, CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV, sizeof(ccmajor), &ccmajor, NULL);
+		if ( err != CL_SUCCESS ) {
+		        printf( "Error checking device compute capability" );
+		        exit(EXIT_FAILURE);
+		}
+
+		if(ccmajor < 7){
+			// older nvidia gpus
+		        printf("compiling sieve for NVIDIA with local mem cache\n");
+		        sieve = sclGetCLSoftware(sieve_nv_cl,"sieve",hardware, 1);
+	                sieve_ls = 1024;
+		        fprintf(stderr,"Using local memory cache for sieve.\n");
+		}
+		else{
+			// volta, turing
+		        printf("compiling sieve\n");
+		        sieve = sclGetCLSoftware(sieve_cl,"sieve",hardware, 1);
+			sieve_ls = 64;
+	                fprintf(stderr,"Using L2 cache for sieve.\n");		
+		}
 
                 printf("compiling setupokok\n");
                 setupokok = sclGetCLSoftware(setupokok_cl,"setupokok",hardware, 1);
@@ -873,23 +902,18 @@ int main(int argc, char *argv[])
                 printf("compiling checkn\n");
                 checkn = sclGetCLSoftware(checkn_cl,"checkn",hardware, 1);
 
-                sieve_ls = 1024;
-                printf("local workgroup size for sieve kernel is 1024 threads\n");
-                fprintf(stderr,"Using Nvidia local memory cache. Work size is 1024.\n");
         }
         else{
                 printf("compiling sieve\n");
                 sieve = sclGetCLSoftware(sieve_cl,"sieve",hardware, 1);
+		sieve_ls = 64;
+	        fprintf(stderr,"Using generic sieve kernel.\n");
 
                 printf("compiling setupokok\n");
                 setupokok = sclGetCLSoftware(setupokok_cl,"setupokok",hardware, 0);     // AMD's compiler is slow with optimize on
 
                 printf("compiling checkn\n");
                 checkn = sclGetCLSoftware(checkn_cl,"checkn",hardware, 0);              // AMD's compiler breaks the kernel with optimize on
-
-                sieve_ls = 64;
-                printf("local workgroup size for sieve kernel is 64 threads\n");
-                fprintf(stderr,"Not using local memory cache. Work size is 64.\n");
         }
 
         printf("compiling done\n");
@@ -949,7 +973,7 @@ int main(int argc, char *argv[])
 				Search_sse2(K, SHIFT, ITER, K_COUNT, K_DONE);
 			}
 #else
-                        SearchAP26(K,SHIFT,ITER);
+                        SearchAP26(K,SHIFT,sieve_ls,computemode);
 #endif
 
 			ITER = 0;

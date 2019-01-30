@@ -9,14 +9,11 @@
 
 #define MOD 258559632607830L
 
-__kernel void setupn(__global long *n43_d, __global long *n59_0, __global long *n59_1, long S53_d, long S47_d, long S43_d){
+__kernel void setupn(__global long *n43_d, __global long *n59_0, __global long *n59_1, long S53, long S47, long S43){
 
 
 	int i = get_global_id(0);
 	long n43, n47, n53;
-	long S53 = S53_d;
-	long S47 = S47_d;
-	long S43 = S43_d;
 	int i43, i47, i53;
 	int count;
 

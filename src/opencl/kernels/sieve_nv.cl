@@ -21,7 +21,7 @@ __kernel void sieve(__global long *n59, long S59, int shift, __global long *n_re
 	}
         barrier(CLK_GLOBAL_MEM_FENCE);
 
-	// this smem copy only works with 1024 threads/block
+	// this local memory copy only works with 1024 threads/block
 	int q = get_local_id(0);
 	localOKOK[q] = OKOK[q];				// copies 0-1023
 	localOKOK[q + 1024] = OKOK[q + 1024];		// copies 1024 - 2047
