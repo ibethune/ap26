@@ -2,7 +2,7 @@
 
 // AP26 application version
 #define MAJORV 2
-#define MINORV 5
+#define MINORV 6
 //#define SUFFIXV ""
 #define SUFFIXV ""
 
@@ -385,7 +385,7 @@ static void write_state(int KMIN, int KMAX, int SHIFT, int K, int ITER)
 	{
 		// If state file is closed OK, write to the other state file
 		// next time round
-		if (fclose(out) == 0) write_state_a_next != write_state_a_next; 
+		if (fclose(out) == 0) write_state_a_next = !write_state_a_next; 
 	}
 }
 
