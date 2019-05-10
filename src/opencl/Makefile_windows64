@@ -7,18 +7,18 @@ LD = $(CC)
 APP = ap26_opencl_windows64.exe
 
 SRC = ../common/AP26.cpp simpleCL.c ../common/CONST.H ../common/PrimeQ_x86.h simpleCL.h kernels/checkn.cl kernels/setok.cl kernels/clearok.cl kernels/clearsol.cl kernels/offset.cl kernels/setupokok.cl kernels/sieve.cl kernels/sieve_nv.cl kernels/setupn.cl
-KERNEL_HEADERS = kernels/checkn.h kernels/setok.h kernels/clearok.h kernels/clearsol.h kernels/offset.h kernels/setupokok.h kernels/sieve.h kernels/sieve_nv.h kernels/setupn.h
+KERNEL_HEADERS = kernels/checkn.h kernels/setok.h kernels/clearok.h kernels/clearsol.h kernels/offset.h kernels/setupokok.h kernels/sieve.h kernels/sieve_nv.h kernels/setupn.h cl.h
 OBJ = AP26.o simpleCL.o
 
 OCL_INC = 
-OCL_LIB = C:/Windows/System32/OpenCL.dll
+OCL_LIB = C:\Users\blitt\Documents\GitHub\ap26\src\opencl\OpenCL.dll
 
-BOINC_DIR = ../../../boinc_64
-BOINC_INC = -I$(BOINC_DIR)/include/boinc
-BOINC_LIB = -L$(BOINC_DIR)/lib -lboinc_opencl -lboinc_api -lboinc -lstdc++ -lpthread
+BOINC_DIR = C:/Users/blitt/Documents/GitHub/boinc/lib
+BOINC_INC = -I C:/Users/blitt/Documents/GitHub/boinc/api -I C:/Users/blitt/Documents/GitHub/boinc/lib -I C:/Users/blitt/Documents/GitHub/boinc/win_build -I C:/Users/blitt/Documents/GitHub/boinc
+BOINC_LIB = -L$(BOINC_DIR) -lboinc_opencl -lboinc_api -lboinc -lstdc++ -lpthread
 
 DFLAGS = -DAP26_BOINC -DAP26_OPENCL
-CFLAGS = -I . -I kernels -O3 -m64
+CFLAGS = -I . -I kernels -O3 -m64 
 LDFLAGS = $(CFLAGS) -static -Wl,-enable-stdcall-fixup
 
 all : clean $(APP) 
@@ -33,8 +33,8 @@ simpleCL.o : $(SRC)
 	$(CC) $(DFLAGS) $(CFLAGS) $(OCL_INC) $(BOINC_INC) -c -o $@ simpleCL.c
 
 .cl.h:
-	./cltoh.pl $< > $@
+	C:\Perl64\bin\perl cltoh.pl $< > $@
 
 clean :
-	rm -f *.o kernels/*.h $(APP)
+	
 
