@@ -4,24 +4,24 @@ LD = $(CC)
 .SUFFIXES:
 .SUFFIXES: .o .c .h .cl .cpp
 
-APP = ap26_opencl_windows64.exe
+APP = ap26_opencl_linux64
 
 SRC = ../common/AP26.cpp simpleCL.c ../common/CONST.H ../common/PrimeQ_x86.h simpleCL.h kernels/checkn.cl kernels/setok.cl kernels/clearok.cl kernels/clearsol.cl kernels/offset.cl kernels/setupokok.cl kernels/sieve.cl kernels/sieve_nv.cl kernels/setupn.cl
 KERNEL_HEADERS = kernels/checkn.h kernels/setok.h kernels/clearok.h kernels/clearsol.h kernels/offset.h kernels/setupokok.h kernels/sieve.h kernels/sieve_nv.h kernels/setupn.h
 OBJ = AP26.o simpleCL.o
 
-OCL_INC = 
-OCL_LIB = C:/Windows/System32/OpenCL.dll
+OCL_INC = -I /usr/local/cuda/include/CL/
+OCL_LIB = -L/usr/lib/x86_64-linux-gnu/ -lOpenCL
 
-BOINC_DIR = ../../../boinc_64
+BOINC_DIR = ../../../boinc_64_707
 BOINC_INC = -I$(BOINC_DIR)/include/boinc
-BOINC_LIB = -L$(BOINC_DIR)/lib -lboinc_opencl -lboinc_api -lboinc -lstdc++ -lpthread
+BOINC_LIB = -L$(BOINC_DIR)/lib -lboinc_opencl -lboinc_api -lboinc -lpthread -lm
 
-DFLAGS = -DAP26_BOINC -DAP26_OPENCL
-CFLAGS = -I . -I kernels -O3 -m64
-LDFLAGS = $(CFLAGS) -static -Wl,-enable-stdcall-fixup
+DFLAGS  = -DAP26_BOINC -DAP26_OPENCL
+CFLAGS  = -I . -I kernels -O3 -m64
+LDFLAGS = $(CFLAGS) -static-libgcc -static-libstdc++
 
-all : clean $(APP) 
+all : clean $(APP)
 
 $(APP) : $(OBJ)
 	$(LD) $(LDFLAGS) $^ $(OCL_LIB) $(BOINC_LIB) -o $@
